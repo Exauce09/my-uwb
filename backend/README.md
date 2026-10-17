@@ -172,7 +172,15 @@ Couverture : upgrade E1→E2, conservation des comptes, association Person/User,
 | PATCH | `/api/v1/users/{id}/status` | Rôle `admin` |
 | POST | `/api/v1/users/{id}/roles` | Rôle `admin` |
 | DELETE | `/api/v1/users/{id}/roles/{role}` | Rôle `admin` |
+| PUT | `/api/v1/users/{id}/person` | Rôle `admin` (lier une Person) |
+| DELETE | `/api/v1/users/{id}/person` | Rôle `admin` (délier) |
+| POST | `/api/v1/persons` | Rôle `admin` |
+| GET | `/api/v1/persons` | Rôle `admin` (pagination, `q`) |
+| GET | `/api/v1/persons/{id}` | Rôle `admin` |
+| PATCH | `/api/v1/persons/{id}` | Rôle `admin` |
+| DELETE | `/api/v1/persons/{id}` | Rôle `admin` (soft-delete) |
 
 Rôles prévus : `student`, `teacher`, `finance`, `admin`.  
 Règles : pas d’auto-désactivation ; pas de retrait/désactivation du dernier administrateur actif.  
-Concurrence : verrou commun (`pg_advisory_xact_lock` sur PostgreSQL ; lock processus sur SQLite de test) autour du compte + mutation.
+Concurrence : verrou commun (`pg_advisory_xact_lock` sur PostgreSQL ; lock processus sur SQLite de test) autour du compte + mutation.  
+Personnes : identité distincte du compte ; e-mail Person = contact (non unique) ; listes excluent les fiches soft-deleted.

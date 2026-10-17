@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api import auth, health, users
+from app.api import auth, health, persons, users
 from app.config import get_settings
 
 settings = get_settings()
@@ -13,7 +13,7 @@ app = FastAPI(
     title='SIGU-UWB API',
     description=(
         'API du Systeme Integre de Gestion Universitaire (Universite William Booth). '
-        'Socle E1 : sante, authentification, roles. '
+        'Socle : sante, authentification, roles, personnes (Module 2). '
         'Les modules metier (notes, finances, etc.) ne sont pas inclus.'
     ),
     version=__version__,
@@ -32,3 +32,4 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router, prefix='/api/v1')
 app.include_router(users.router, prefix='/api/v1')
+app.include_router(persons.router, prefix='/api/v1')

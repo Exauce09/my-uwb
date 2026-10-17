@@ -6,15 +6,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import require_roles
 from app.database import get_db
+from app.models.person import Person
 from app.models.role import Role, RoleName
 from app.models.user import User
 from app.schemas.user import (
     UserCreate,
     UserListResponse,
+    UserPersonLink,
     UserPublic,
     UserRoleAssign,
     UserStatusUpdate,
@@ -34,6 +37,7 @@ def _to_public(user: User) -> UserPublic:
         full_name=user.full_name,
         is_active=user.is_active,
         roles=sorted(user.role_names()),
+        person_id=user.person_id,
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
@@ -282,4 +286,67 @@ def remove_role(
             raise
 
     return _to_public(_get_user_or_404(db, user_id))
+
+
+@router.put("/{user_id}/person", response_model=UserPublic)
+def link_user_person(
+    user_id: UUID,
+    body: UserPersonLink,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> UserPublic:
+    """Lie un compte à une Person active. Idempotent si déjà la même liaison."""
+    user = _get_user_or_404(db, user_id)
+    person = (
+        db.query(Person)
+        .filter(Person.id == body.person_id, Person.deleted_at.is_(None))
+        .first()
+    )
+    if person is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Personne introuvable.",
+        )
+
+    if user.person_id == person.id:
+        return _to_public(user)
+
+    if user.person_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ce compte est déjà lié à une autre personne.",
+        )
+
+    other = db.query(User).filter(User.person_id == person.id).first()
+    if other is not None and other.id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cette personne est déjà liée à un autre compte.",
+        )
+
+    user.person_id = person.id
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Liaison Person/User impossible (contrainte d’unicité).",
+        ) from None
+    return _to_public(_get_user_or_404(db, user.id))
+
+
+@router.delete("/{user_id}/person", response_model=UserPublic)
+def unlink_user_person(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> UserPublic:
+    """Retire la liaison Person — ne supprime ni le compte ni la fiche."""
+    user = _get_user_or_404(db, user_id)
+    if user.person_id is None:
+        return _to_public(user)
+    user.person_id = None
+    db.commit()
+    return _to_public(_get_user_or_404(db, user.id))
 

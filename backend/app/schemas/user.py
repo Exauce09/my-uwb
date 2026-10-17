@@ -12,6 +12,7 @@ class UserPublic(BaseModel):
     full_name: str | None
     is_active: bool
     roles: list[str]
+    person_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -33,6 +34,12 @@ class UserStatusUpdate(BaseModel):
 
 class UserRoleAssign(BaseModel):
     role: str = Field(min_length=1, max_length=32)
+
+
+class UserPersonLink(BaseModel):
+    """Associe un compte à une fiche Person (admin)."""
+
+    person_id: UUID
 
 
 class UserListResponse(BaseModel):

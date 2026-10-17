@@ -8,6 +8,7 @@ from app.schemas.person import (
 from app.schemas.user import (
     UserCreate,
     UserListResponse,
+    UserPersonLink,
     UserPublic,
     UserRoleAssign,
     UserStatusUpdate,
@@ -23,6 +24,7 @@ __all__ = [
     "UserCreate",
     "UserPublic",
     "UserListResponse",
+    "UserPersonLink",
     "UserRoleAssign",
     "UserStatusUpdate",
 ]

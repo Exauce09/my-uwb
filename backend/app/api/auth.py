@@ -27,6 +27,7 @@ def _user_public(user: User) -> UserPublic:
         full_name=user.full_name,
         is_active=user.is_active,
         roles=sorted(user.role_names()),
+        person_id=user.person_id,
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
