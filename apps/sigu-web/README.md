@@ -6,9 +6,12 @@ Stack : React 19, Vite, TypeScript, Tailwind CSS 4, React Router.
 
 ## Prérequis
 
-- Backend SIGU démarré (`uvicorn` sur le port 8000 par défaut).
-- Compte avec rôle `admin`.
-- CORS backend : inclure `http://localhost:5174` (`SIGU_CORS_ORIGINS`).
+- Backend SIGU démarré avec schéma Alembic **E2** sur PostgreSQL (cible runtime).
+- Compte avec rôle `admin` (script `create_admin`, jamais sur une base inconnue).
+- CORS backend : inclure `http://localhost:5175` (`SIGU_CORS_ORIGINS`).
+- **Ports** : le site public utilise souvent `5173`/`5174` ; le shell SIGU démarre
+  sur **`5175`**. Si `8000` est déjà pris par un autre projet, lancez l’API sur
+  `8001` et alignez `VITE_API_BASE_URL`.
 
 ## Lancement
 
@@ -19,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Ouvre `http://localhost:5174`.
+Ouvre `http://localhost:5175`.
 
 Variable publique uniquement :
 

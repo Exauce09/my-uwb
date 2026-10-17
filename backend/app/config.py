@@ -31,7 +31,10 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:5174,http://localhost:5175,"
+        "http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175"
+    )
 
     # Limitation des tentatives de login (mémoire processus — voir README).
     login_rate_limit_attempts: int = Field(

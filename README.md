@@ -43,7 +43,8 @@ npm install
 npm run dev
 ```
 
-Ouvre `http://localhost:5174` (API attendue sur `http://127.0.0.1:8000`).
+Ouvre `http://localhost:5175` (API attendue sur un port libre, souvent `8001`
+si `8000` est déjà pris hors SIGU).
 
 ## Notes
 

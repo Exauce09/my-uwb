@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
@@ -83,12 +84,20 @@ def login(
     rate_keys = _login_rate_keys(email, request)
     _raise_if_login_rate_limited(rate_keys, settings)
 
-    user = (
-        db.query(User)
-        .options(joinedload(User.roles))
-        .filter(User.email == email)
-        .first()
-    )
+    try:
+        user = (
+            db.query(User)
+            .options(joinedload(User.roles))
+            .filter(User.email == email)
+            .first()
+        )
+    except (OperationalError, ProgrammingError):
+        # Schéma absent / DB injoignable — ne pas renvoyer 500 opaque.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service de données indisponible. Vérifiez les migrations et la base.",
+        ) from None
+
     # Message générique — ne pas indiquer si l’e-mail existe.
     if user is None or not verify_password(body.password, user.hashed_password):
         _register_login_failures(rate_keys, settings)
