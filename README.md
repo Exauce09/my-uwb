@@ -6,8 +6,8 @@ Monorepo du système d’information et du site institutionnel de l’Universit�
 
 ```
 apps/website/     Site institutionnel public (React + Vite + Tailwind)
-apps/sigu-web/    Application SIGU (PWA) — à venir
-backend/          API FastAPI + PostgreSQL (socle E1)
+apps/sigu-web/    Application SIGU (admin React) — V1 shell
+backend/          API FastAPI + PostgreSQL (Modules 1–2)
 docs/             Conception, MCD, décisions
 ```
 
@@ -33,6 +33,17 @@ copy .env.example .env
 pytest -q
 # Voir backend/README.md pour Alembic, uvicorn et create_admin
 ```
+
+## Application SIGU (`apps/sigu-web`)
+
+```bash
+cd apps/sigu-web
+copy .env.example .env
+npm install
+npm run dev
+```
+
+Ouvre `http://localhost:5174` (API attendue sur `http://127.0.0.1:8000`).
 
 ## Notes
 

@@ -158,6 +158,18 @@ Sans URL : scénarios PG **ignorés** (un test hors-ligne vérifie uniquement l�
 
 Couverture : upgrade E1→E2, conservation des comptes, association Person/User, unicité `person_id`, `ON DELETE SET NULL`, downgrade E2→E1, re-upgrade.
 
+### Checklist avant exécution réelle (sans inventer d’URL)
+
+1. Créer **hors de cette doc** une base et un utilisateur PostgreSQL dont les noms commencent par `sigu_test_`.
+2. Ne jamais réutiliser `nic_postgres`, `spe-rdc-db-1` ni une base métier.
+3. Exporter `SIGU_TEST_DATABASE_URL` (valeur réelle locale, non commitée).
+4. Confirmer que la base est jetable : la campagne MIG exécute `alembic downgrade base`.
+5. Lancer **d’abord** `pytest -q tests/test_migration_persons_postgres.py`.
+6. Ensuite seulement, sur la même base déjà en E2 (ou après upgrade head), lancer `pytest -q tests/test_admin_guard_postgres.py`.
+7. Ne jamais exécuter MIG et I1 en parallèle sur la même base.
+
+Tant que ces commandes n’ont pas été réellement exécutées avec succès, **PostgreSQL n’est pas validé**.
+
 ## Endpoints E1
 
 | Méthode | Chemin | Accès |
