@@ -1,0 +1,54 @@
+# Dependencies & build
+node_modules/
+dist/
+build/
+apps/website/dist/
+apps/sigu-web/dist/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Secrets & local env (never commit)
+.env
+.env.*
+!.env.example
+!**/.env.example
+backend/.env
+*.pem
+*.key
+id_rsa
+id_rsa.*
+*.p12
+*.pfx
+credentials.json
+**/secrets/
+*.sqlite
+*.db
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors / local tooling
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Backups & dumps
+*.sql.gz
+*.dump
+*.bak

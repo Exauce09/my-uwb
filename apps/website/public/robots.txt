@@ -1,0 +1,8 @@
+# Université William Booth — site public (apps/website)
+# D6.2 : domaine de production non confirmé dans la configuration du projet.
+# Après validation du domaine, ajouter une ligne :
+# Sitemap: https://<domaine-confirmé>/sitemap.xml
+# Ne pas inventer d’URL de sitemap avant cette confirmation.
+
+User-agent: *
+Allow: /

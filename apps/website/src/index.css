@@ -1,0 +1,143 @@
+﻿@import 'tailwindcss';
+
+@theme {
+  --color-uwb-red: #b01030;
+  --color-uwb-red-dark: #8a0c26;
+  --color-uwb-blue: #1a1a1a;
+  --color-uwb-blue-deep: #111111;
+  --color-uwb-navy: #0c0c0c;
+  --color-uwb-gold: #b01030;
+  --color-uwb-gold-soft: #f2d5dc;
+  --color-uwb-surface: #fafafa;
+  --color-uwb-muted: #5c5c5c;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-white font-sans text-uwb-blue antialiased;
+  }
+
+  ::selection {
+    @apply bg-uwb-red/20 text-uwb-blue-deep;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-uwb-red;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .hero-veil {
+    background:
+      linear-gradient(
+        105deg,
+        rgba(12, 12, 12, 0.88) 0%,
+        rgba(12, 12, 12, 0.55) 45%,
+        rgba(176, 16, 48, 0.35) 100%
+      ),
+      linear-gradient(to top, rgba(12, 12, 12, 0.9) 0%, transparent 45%);
+  }
+
+  .about-hero-veil {
+    background:
+      linear-gradient(
+        105deg,
+        rgba(12, 12, 12, 0.55) 0%,
+        rgba(12, 12, 12, 0.28) 48%,
+        rgba(12, 12, 12, 0.12) 100%
+      ),
+      linear-gradient(
+        to top,
+        rgba(12, 12, 12, 0.62) 0%,
+        rgba(12, 12, 12, 0.2) 42%,
+        transparent 70%
+      );
+  }
+
+  .about-section-veil {
+    background:
+      linear-gradient(
+        to top,
+        rgba(12, 12, 12, 0.55) 0%,
+        rgba(12, 12, 12, 0.28) 45%,
+        rgba(12, 12, 12, 0.35) 100%
+      );
+  }
+
+  .library-hero-veil {
+    background:
+      linear-gradient(
+        100deg,
+        rgba(12, 12, 12, 0.92) 0%,
+        rgba(12, 12, 12, 0.72) 42%,
+        rgba(12, 12, 12, 0.45) 72%,
+        rgba(176, 16, 48, 0.28) 100%
+      ),
+      linear-gradient(to top, rgba(12, 12, 12, 0.88) 0%, transparent 50%),
+      radial-gradient(
+        ellipse 70% 60% at 70% 40%,
+        rgba(176, 16, 48, 0.12),
+        transparent 70%
+      );
+  }
+
+  .ken-burns {
+    animation: ken-burns 32s ease-in-out infinite alternate;
+  }
+
+  .film-grain::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes ken-burns {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.1) translate(-1.2%, -0.8%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ken-burns {
+    animation: none;
+  }
+}

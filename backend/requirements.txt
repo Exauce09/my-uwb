@@ -1,0 +1,12 @@
+# SIGU-UWB backend — dépendances runtime (installer dans un venv local)
+fastapi>=0.115,<1
+uvicorn[standard]>=0.32,<1
+sqlalchemy>=2.0,<3
+alembic>=1.14,<2
+psycopg[binary]>=3.2,<4
+pydantic-settings>=2.6,<3
+python-jose[cryptography]>=3.3,<4
+passlib[bcrypt]>=1.7,<2
+bcrypt>=4.0,<5
+email-validator>=2.2,<3
+httpx>=0.28,<1
