@@ -2,12 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session, joinedload
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_roles
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.person import Person
+from app.models.role import RoleName
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.dossier import AcademicDossierSection, DossierPublic
 from app.schemas.person import PersonPublic
 from app.schemas.user import UserPublic
 from app.security.login_rate_limit import (
@@ -151,6 +153,17 @@ def me(user: User = Depends(get_current_user)) -> UserPublic:
     return _user_public(user)
 
 
+def _own_person_or_none(db: Session, user: User) -> Person | None:
+    """Person liée au compte courant uniquement — jamais un id fourni par le client."""
+    if user.person_id is None:
+        return None
+    return (
+        db.query(Person)
+        .filter(Person.id == user.person_id, Person.deleted_at.is_(None))
+        .first()
+    )
+
+
 @router.get("/me/person", response_model=PersonPublic)
 def me_person(
     user: User = Depends(get_current_user),
@@ -160,19 +173,29 @@ def me_person(
     Fiche Person liée au compte authentifié uniquement.
     404 si aucune liaison ou fiche soft-deleted — pas d’accès cross-compte.
     """
-    if user.person_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucune fiche Person liée à ce compte.",
-        )
-    person = (
-        db.query(Person)
-        .filter(Person.id == user.person_id, Person.deleted_at.is_(None))
-        .first()
-    )
+    person = _own_person_or_none(db, user)
     if person is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aucune fiche Person liée à ce compte.",
         )
     return PersonPublic.model_validate(person)
+
+
+@router.get("/me/dossier", response_model=DossierPublic)
+def me_dossier(
+    user: User = Depends(require_roles(RoleName.student.value)),
+    db: Session = Depends(get_db),
+) -> DossierPublic:
+    """
+    Dossier étudiant en lecture seule pour le compte authentifié.
+
+    - Identité : Person liée à ``user.person_id`` (pas de person_id en query).
+    - Section académique : explicite ``not_provisioned`` tant que le modèle
+      inscriptions / notes n’est pas validé par l’UWB (aucun inventaire fictif).
+    """
+    person = _own_person_or_none(db, user)
+    return DossierPublic(
+        person=PersonPublic.model_validate(person) if person else None,
+        academic=AcademicDossierSection(),
+    )

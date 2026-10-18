@@ -1,5 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { Button } from '../components/ui/Button'
+import { PortalAlert } from '../components/portal/PortalAlert'
+import { portalUi } from '../components/portal/portalTheme'
+import { site } from '../data/site'
 import { useAuth } from './AuthContext'
 
 type Props = {
@@ -8,13 +10,13 @@ type Props = {
 }
 
 export function RequireAuth({ role }: Props) {
-  const { user, loading } = useAuth()
+  const { user, loading, logout } = useAuth()
   const location = useLocation()
 
   if (loading) {
     return (
       <div
-        className="mx-auto max-w-7xl px-5 py-20 text-sm text-uwb-muted sm:px-8"
+        className="flex min-h-screen items-center justify-center bg-white text-sm text-[#6B7280]"
         role="status"
         aria-live="polite"
       >
@@ -34,24 +36,45 @@ export function RequireAuth({ role }: Props) {
 
   if (!user.roles.includes(role)) {
     return (
-      <div className="mx-auto max-w-xl px-5 py-20 sm:px-8">
-        <p className="text-xs font-semibold tracking-[0.2em] text-uwb-red uppercase">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-5 py-16">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full ring-1 ring-[#E5E7EB]">
+            <img
+              src={site.logoSrc}
+              alt=""
+              className="h-[82%] w-[82%] object-contain"
+            />
+          </span>
+          <p className="text-sm font-semibold text-[#1F2937]">{site.shortName}</p>
+        </div>
+        <p className="text-xs font-semibold tracking-[0.16em] text-[#B91C2B] uppercase">
           Accès refusé
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold text-uwb-blue">
+        <h1 className="mt-2 font-display text-3xl font-semibold text-[#1F2937]">
           Espace réservé
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-uwb-muted">
-          Ce portail exige le rôle « {role === 'student' ? 'étudiant' : 'enseignant'} ».
-          Votre compte ({user.email}) n’y a pas accès.
-        </p>
+        <div className="mt-4">
+          <PortalAlert tone="error">
+            Ce portail exige le rôle «{' '}
+            {role === 'student' ? 'étudiant' : 'enseignant'} ». Votre compte (
+            {user.email}) n’y a pas accès.
+          </PortalAlert>
+        </div>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button to="/connexion" className="rounded-none">
+          <button
+            type="button"
+            className={portalUi.btnPrimary}
+            onClick={() => {
+              void logout().then(() => {
+                window.location.assign('/connexion')
+              })
+            }}
+          >
             Changer de compte
-          </Button>
-          <Button to="/" variant="ghost" className="rounded-none">
-            Accueil
-          </Button>
+          </button>
+          <a href="/" className={portalUi.btnSecondary}>
+            Accueil du site
+          </a>
         </div>
       </div>
     )

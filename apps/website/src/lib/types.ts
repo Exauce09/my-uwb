@@ -24,6 +24,17 @@ export type PersonPublic = {
   deleted_at: string | null
 }
 
+export type AcademicDossierSection = {
+  status: 'not_provisioned'
+  message: string
+  enrollments: unknown[]
+}
+
+export type DossierPublic = {
+  person: PersonPublic | null
+  academic: AcademicDossierSection
+}
+
 export type TokenResponse = {
   token_type: string
   access_token: string

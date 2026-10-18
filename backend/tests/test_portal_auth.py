@@ -17,6 +17,7 @@ from app.security.passwords import hash_password, verify_password
 
 _PORTAL_ALLOWED_NEXT = {
     "/espace-etudiant": "student",
+    "/espace-etudiant/dossier": "student",
     "/espace-enseignant": "teacher",
 }
 
@@ -172,7 +173,9 @@ def test_logout_clears_session(client, student_user):
         (["student"], None, "/espace-etudiant"),
         (["teacher"], None, "/espace-enseignant"),
         (["student"], "/espace-etudiant", "/espace-etudiant"),
+        (["student"], "/espace-etudiant/dossier", "/espace-etudiant/dossier"),
         (["teacher"], "/espace-enseignant", "/espace-enseignant"),
+        (["teacher"], "/espace-etudiant/dossier", "/espace-enseignant"),
         # Cross-role → fallback sûr
         (["student"], "/espace-enseignant", "/espace-etudiant"),
         (["teacher"], "/espace-etudiant", "/espace-enseignant"),

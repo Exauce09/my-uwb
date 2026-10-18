@@ -3,13 +3,14 @@ import type { UserPublic } from '../lib/types'
 /** Destinations internes autorisées après connexion (liste blanche stricte). */
 export const PORTAL_ALLOWED_NEXT = {
   '/espace-etudiant': 'student',
+  '/espace-etudiant/dossier': 'student',
   '/espace-enseignant': 'teacher',
 } as const
 
 export type PortalAllowedPath = keyof typeof PORTAL_ALLOWED_NEXT
 
 /** Accueil portail selon les rôles E1 (student / teacher). */
-export function portalHomeForRoles(roles: string[]): string {
+export function portalHomeForRoles(roles: string[]): PortalAllowedPath | '/connexion' {
   const set = new Set(roles)
   if (set.has('student')) return '/espace-etudiant'
   if (set.has('teacher')) return '/espace-enseignant'
@@ -57,8 +58,8 @@ export function parseSafePortalNext(
   if (trimmed.length > 1 && trimmed.includes('//')) return null
 
   const pathOnly = trimmed.split(/[?#]/, 1)[0] ?? ''
-  if (pathOnly === '/espace-etudiant' || pathOnly === '/espace-enseignant') {
-    return pathOnly
+  if (pathOnly in PORTAL_ALLOWED_NEXT) {
+    return pathOnly as PortalAllowedPath
   }
   return null
 }

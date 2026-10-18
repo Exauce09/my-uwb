@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { RequireAuth } from './auth/RequireAuth'
 import { MainLayout } from './layouts/MainLayout'
+import { PortalBlankLayout } from './layouts/PortalBlankLayout'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -68,6 +69,11 @@ const TeacherPortalPage = lazy(() =>
     default: m.TeacherPortalPage,
   })),
 )
+const StudentDossierPage = lazy(() =>
+  import('./pages/StudentDossierPage').then((m) => ({
+    default: m.StudentDossierPage,
+  })),
+)
 
 export default function App() {
   return (
@@ -106,16 +112,6 @@ export default function App() {
                 />
               }
             />
-            <Route path="connexion" element={<LoginPage />} />
-            <Route element={<RequireAuth role="student" />}>
-              <Route path="espace-etudiant" element={<StudentPortalPage />} />
-            </Route>
-            <Route element={<RequireAuth role="teacher" />}>
-              <Route
-                path="espace-enseignant"
-                element={<TeacherPortalPage />}
-              />
-            </Route>
             <Route
               path="sigu"
               element={<Navigate to="/connexion" replace />}
@@ -123,6 +119,25 @@ export default function App() {
             <Route path="404" element={<NotFoundPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
+
+          {/* Portail public — hors Header/Footer institutionnels */}
+          <Route element={<PortalBlankLayout />}>
+            <Route path="connexion" element={<LoginPage />} />
+            <Route element={<RequireAuth role="student" />}>
+              <Route path="espace-etudiant" element={<StudentPortalPage />} />
+              <Route
+                path="espace-etudiant/dossier"
+                element={<StudentDossierPage />}
+              />
+            </Route>
+            <Route element={<RequireAuth role="teacher" />}>
+              <Route
+                path="espace-enseignant"
+                element={<TeacherPortalPage />}
+              />
+            </Route>
+          </Route>
+
           <Route path="home" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

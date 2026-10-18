@@ -1,5 +1,10 @@
 import { apiRequest, setAccessToken } from '../lib/api'
-import type { PersonPublic, TokenResponse, UserPublic } from '../lib/types'
+import type {
+  DossierPublic,
+  PersonPublic,
+  TokenResponse,
+  UserPublic,
+} from '../lib/types'
 
 export async function login(
   email: string,
@@ -29,4 +34,9 @@ export async function fetchMe(): Promise<UserPublic> {
 /** Fiche Person liée au compte — 404 si absente. */
 export async function fetchMePerson(): Promise<PersonPublic> {
   return apiRequest<PersonPublic>('/api/v1/auth/me/person')
+}
+
+/** Dossier étudiant (identité réelle + section académique non provisionnée). */
+export async function fetchMeDossier(): Promise<DossierPublic> {
+  return apiRequest<DossierPublic>('/api/v1/auth/me/dossier')
 }
