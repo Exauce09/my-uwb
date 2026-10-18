@@ -32,12 +32,22 @@ Document vivant. Distingue **confirmé (doc dépôt)**, **proposé (conception p
 | D-026 | Phase 2.1 | Messagerie + assistant IA **hors** première migration métier | **Proposé** | Backlog |
 | D-027 | Phase 2.1 | Séparation responsabilités : admin / scolarité (`academic_affairs`) / finance / teacher | **Proposé — à valider** | Permissions D-013 |
 | D-028 | Phase 2.1 | Tables append-only vs soft-delete documentées ; restriction si notes/paiements | **Proposé** | Rétention légale = UWB |
-| D-029 | Phase 2.1 | Unicité matricule : portée institution vs global si multi-établissements | **Non décidé** | Q7 / Q34 |
+| D-029 | Phase 2.1 | Unicité matricule : portée institution vs global si multi-établissements | **Non décidé** | Q10 / Q34 (`12` ; anciennement cité Q7/Q34 par erreur de renvoi) |
 | D-030 | Phase 2.1 | `departments` créés seulement si UWB confirme des départements formels | **Proposé** | Q3 — pas d’imposition structurelle |
+| D-031 | Phase 3 | Migration académique E3 (dossier V1 lecture seule) | **Bloqué** | Audit 2026-10-18 : aucune valeur écrite des décisions V1 dans le dépôt — voir `12` §6 |
+
+## Phase 3 — audit de clôture (2026-10-18)
+
+**Constat :** un accord de principe des responsables UWB a été annoncé côté projet, mais **aucune** valeur précise (option A/B/C, liste de programmes, masque de matricule, calendrier, oui/non Q32–Q33, liste de statuts, signataire, date, PV ou mail) n’est présente dans le dépôt ni annexée à `docs/12`.
+
+**Conséquence :** les lignes D-016, D-020, D-021, D-022, D-029 et les questions Q5–Q8 / Q10 / Q32–Q34 restent **ouvertes**. D-015 (notes) reste hors périmètre V1. **Aucune migration Alembic E3** ni modèle académique n’est créée sur la base de cet audit.
+
+**Levée du blocage :** renseigner `docs/12` §1 (valeur + responsable + date + référence écrite), puis passer les lignes concernées en **Confirmé** ici avec la même référence.
 
 ## Mode d’emploi
 
 1. Toute décision UWB écrite (PV, mail officiel) → passer la ligne en **Confirmé** avec référence.  
 2. Ne pas implémenter de migration métier tant que D-014, D-015, D-016 (et Q32–Q34 pour inscriptions pédagogiques / promo / matricule) restent ouverts pour le module concerné.  
 3. Ne pas écraser ce registre : ajouter des lignes.  
-4. Les options d’unicité (D-022) et la présence de Cohort (D-021) restent documentées dans `06` / `08` jusqu’à réponse UWB — **ne pas inventer** la règle.
+4. Les options d’unicité (D-022) et la présence de Cohort (D-021) restent documentées dans `06` / `08` jusqu’à réponse UWB — **ne pas inventer** la règle.  
+5. Phase 3 (D-031) : ne pas déduire des règles détaillées d’une « approbation générale » sans valeurs consignées dans `12`.
