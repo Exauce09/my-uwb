@@ -71,8 +71,8 @@ def pg_i1_env():
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
     tag = uuid.uuid4().hex[:12]
-    email1 = f"i1pg_{tag}_a@example.test"
-    email2 = f"i1pg_{tag}_b@example.test"
+    email1 = f"i1pg_{tag}_a@example.com"
+    email2 = f"i1pg_{tag}_b@example.com"
     created_ids: list[UUID] = []
 
     with SessionLocal() as s:

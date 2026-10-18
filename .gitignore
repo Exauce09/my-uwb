@@ -52,3 +52,15 @@ Thumbs.db
 *.sql.gz
 *.dump
 *.bak
+
+.pgdata_sigu_test/
+
+backend/.pg_sigu_test_pw
+
+backend/.e2e_admin_pw
+
+backend/.e2e_admin_email
+
+backend/_pg_test_env.ps1
+
+backend/.e2e_admin_password

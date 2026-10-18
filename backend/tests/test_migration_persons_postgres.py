@@ -114,7 +114,7 @@ def test_mig0_to_mig6_persons_migration_campaign():
     engine = create_test_engine(url)
     cfg = _alembic_config()
     tag = uuid.uuid4().hex[:12]
-    email = f"mig2_{tag}@example.test"
+    email = f"mig2_{tag}@example.com"
     user_id = uuid.uuid4()
     person_id = uuid.uuid4()
     person_id_b = uuid.uuid4()
@@ -180,7 +180,7 @@ def test_mig0_to_mig6_persons_migration_campaign():
                     "id": person_id,
                     "ln": "Doe",
                     "fn": "Jane",
-                    "em": f"contact_{tag}@example.test",
+                    "em": f"contact_{tag}@example.com",
                 },
             )
             conn.execute(
@@ -209,7 +209,7 @@ def test_mig0_to_mig6_persons_migration_campaign():
                 ),
                 {
                     "id": other_user,
-                    "email": f"mig2_b_{tag}@example.test",
+                    "email": f"mig2_b_{tag}@example.com",
                     "hp": "migration-test-hash-not-for-login",
                     "fn": "Other",
                 },
