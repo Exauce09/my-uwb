@@ -11,6 +11,19 @@ export type UserPublic = {
   updated_at: string
 }
 
+export type PersonPublic = {
+  id: string
+  last_name: string
+  first_name: string
+  other_names: string | null
+  email: string | null
+  phone: string | null
+  birth_date: string | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
 export type TokenResponse = {
   token_type: string
   access_token: string

@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user
 from app.config import Settings, get_settings
 from app.database import get_db
+from app.models.person import Person
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.person import PersonPublic
 from app.schemas.user import UserPublic
 from app.security.login_rate_limit import (
     client_ip_from_request,
@@ -147,3 +149,30 @@ def logout(
 @router.get("/me", response_model=UserPublic)
 def me(user: User = Depends(get_current_user)) -> UserPublic:
     return _user_public(user)
+
+
+@router.get("/me/person", response_model=PersonPublic)
+def me_person(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PersonPublic:
+    """
+    Fiche Person liée au compte authentifié uniquement.
+    404 si aucune liaison ou fiche soft-deleted — pas d’accès cross-compte.
+    """
+    if user.person_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucune fiche Person liée à ce compte.",
+        )
+    person = (
+        db.query(Person)
+        .filter(Person.id == user.person_id, Person.deleted_at.is_(None))
+        .first()
+    )
+    if person is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucune fiche Person liée à ce compte.",
+        )
+    return PersonPublic.model_validate(person)

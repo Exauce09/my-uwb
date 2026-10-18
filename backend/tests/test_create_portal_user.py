@@ -10,12 +10,13 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy import create_engine
 
 from app.database import Base
-from app.models import Role, RoleName, User
+from app.models import Person, Role, RoleName, User
 import app.scripts.create_portal_user as portal_mod
 from app.scripts.create_admin import SchemaNotReadyError, ensure_required_schema
 from app.scripts.create_portal_user import (
     bootstrap_portal_user,
     run_bootstrap,
+    split_full_name,
 )
 from app.security.passwords import hash_password, verify_password
 
@@ -89,7 +90,11 @@ def test_creates_student_with_hashed_password(capsys):
         assert RoleName.admin.value not in user.role_names()
         assert user.hashed_password != "StudentPass1!"
         assert verify_password("StudentPass1!", user.hashed_password)
-        assert user.person_id is None  # liaison Person = phase suivante
+        assert user.person_id is not None
+        person = db.query(Person).filter(Person.id == user.person_id).one()
+        assert person.first_name == "Étudiant"
+        assert person.last_name == "Démo"
+        assert person.email == "student@example.com"
     finally:
         db.close()
 
@@ -112,8 +117,39 @@ def test_creates_teacher(capsys):
     try:
         user = db.query(User).filter(User.email == "teacher@example.com").one()
         assert user.role_names() == {RoleName.teacher.value}
+        assert user.person_id is not None
     finally:
         db.close()
+
+
+def test_split_full_name():
+    assert split_full_name("Jean Dupont") == ("Jean", "Dupont")
+    assert split_full_name("Madonna") == ("Madonna", "Madonna")
+
+
+def test_explicit_first_last_names(capsys):
+    engine = _memory_engine()
+    Base.metadata.create_all(bind=engine)
+    code = run_bootstrap(
+        engine,
+        email="named@example.com",
+        password="NamedPass1!",
+        role_name="student",
+        full_name="Affichage",
+        first_name="Marie",
+        last_name="Kabila",
+    )
+    assert code == 0
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    try:
+        user = db.query(User).filter(User.email == "named@example.com").one()
+        person = db.query(Person).filter(Person.id == user.person_id).one()
+        assert person.first_name == "Marie"
+        assert person.last_name == "Kabila"
+    finally:
+        db.close()
+    assert "NamedPass1!" not in capsys.readouterr().out
 
 
 def test_duplicate_email_fails(capsys):

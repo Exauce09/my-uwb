@@ -1,5 +1,5 @@
 import { apiRequest, setAccessToken } from '../lib/api'
-import type { TokenResponse, UserPublic } from '../lib/types'
+import type { PersonPublic, TokenResponse, UserPublic } from '../lib/types'
 
 export async function login(
   email: string,
@@ -24,4 +24,9 @@ export async function logout(): Promise<void> {
 
 export async function fetchMe(): Promise<UserPublic> {
   return apiRequest<UserPublic>('/api/v1/auth/me')
+}
+
+/** Fiche Person liée au compte — 404 si absente. */
+export async function fetchMePerson(): Promise<PersonPublic> {
+  return apiRequest<PersonPublic>('/api/v1/auth/me/person')
 }
