@@ -1,8 +1,8 @@
 # Validation officielle des règles académiques UWB
 
-**Statut :** dossier de validation métier — **Phase 3 (2026-10-18) : E3 bloqué** faute de valeurs écrites des décisions V1.  
+**Statut :** dossier de validation métier — **Phase 3 (2026-10-18) : E3 autorisé en intérimaire** via `docs/13` (porteur projet). Visa rectorat formel toujours souhaité pour passer en **Confirmé**.  
 **Périmètre :** décisions bloquant la migration académique **E3** et l’enrichissement du dossier étudiant en lecture seule.  
-**Règle :** aucune option inventée dans ce document. Les options listées proviennent exclusivement de `docs/05` à `docs/10`. Les cases « décision officielle », « responsable », « date » et « référence » ne sont remplies qu’avec une **validation écrite UWB** (PV, mail institutionnel) — une approbation générale sans valeurs n’autorise pas E3.
+**Règle :** les valeurs retenues sont celles cochées dans `docs/13` (options déjà documentées / formulaire public). D-015 (notes) reste hors périmètre.
 
 **État technique actuel (constat, hors décision métier) :**
 

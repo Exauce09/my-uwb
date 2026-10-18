@@ -5,11 +5,16 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user, require_roles
 from app.config import Settings, get_settings
 from app.database import get_db
+from app.models.academic import Enrollment, Program, StudentProfile
 from app.models.person import Person
 from app.models.role import RoleName
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
-from app.schemas.dossier import AcademicDossierSection, DossierPublic
+from app.schemas.dossier import (
+    AcademicDossierSection,
+    DossierPublic,
+    EnrollmentPublic,
+)
 from app.schemas.person import PersonPublic
 from app.schemas.user import UserPublic
 from app.security.login_rate_limit import (
@@ -182,6 +187,89 @@ def me_person(
     return PersonPublic.model_validate(person)
 
 
+def _academic_section_for_user(db: Session, user: User) -> AcademicDossierSection:
+    """Inscriptions du seul StudentProfile lié à ``user.person_id`` (pas d’id client)."""
+    if user.person_id is None:
+        return AcademicDossierSection(
+            status="not_provisioned",
+            message=(
+                "Aucune fiche Person liée à ce compte. Les données académiques "
+                "ne sont pas disponibles."
+            ),
+        )
+
+    profile = (
+        db.query(StudentProfile)
+        .filter(
+            StudentProfile.person_id == user.person_id,
+            StudentProfile.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if profile is None:
+        return AcademicDossierSection(
+            status="not_provisioned",
+            message=(
+                "Aucun profil étudiant (matricule) n’est encore enregistré pour "
+                "ce compte. Aucune information fictive n’est affichée."
+            ),
+        )
+
+    rows = (
+        db.query(Enrollment)
+        .options(
+            joinedload(Enrollment.program).joinedload(Program.academic_unit),
+            joinedload(Enrollment.academic_year),
+            joinedload(Enrollment.program_level),
+        )
+        .filter(
+            Enrollment.student_profile_id == profile.id,
+            Enrollment.deleted_at.is_(None),
+        )
+        .order_by(Enrollment.created_at.desc())
+        .all()
+    )
+
+    enrollments: list[EnrollmentPublic] = []
+    for row in rows:
+        level = row.program_level
+        enrollments.append(
+            EnrollmentPublic(
+                id=row.id,
+                status=row.status,
+                kind=row.kind,
+                academic_year_label=row.academic_year.label,
+                program_code=row.program.code,
+                program_title=row.program.title,
+                academic_unit_name=row.program.academic_unit.name,
+                program_level_code=level.code if level else None,
+                program_level_label=level.label if level else None,
+            )
+        )
+
+    if not enrollments:
+        return AcademicDossierSection(
+            status="empty",
+            message=(
+                "Profil étudiant trouvé, mais aucune inscription académique "
+                "enregistrée pour le moment. Les notes restent hors périmètre "
+                "(D-015)."
+            ),
+            student_number=profile.student_number,
+            enrollments=[],
+        )
+
+    return AcademicDossierSection(
+        status="ready",
+        message=(
+            "Inscriptions académiques en lecture seule. Aucune note ni "
+            "délibération n’est exposée tant que D-015 n’est pas validée."
+        ),
+        student_number=profile.student_number,
+        enrollments=enrollments,
+    )
+
+
 @router.get("/me/dossier", response_model=DossierPublic)
 def me_dossier(
     user: User = Depends(require_roles(RoleName.student.value)),
@@ -191,11 +279,11 @@ def me_dossier(
     Dossier étudiant en lecture seule pour le compte authentifié.
 
     - Identité : Person liée à ``user.person_id`` (pas de person_id en query).
-    - Section académique : explicite ``not_provisioned`` tant que le modèle
-      inscriptions / notes n’est pas validé par l’UWB (aucun inventaire fictif).
+    - Académique : StudentProfile + enrollments du même person_id uniquement.
+    - Notes : non exposées (D-015).
     """
     person = _own_person_or_none(db, user)
     return DossierPublic(
         person=PersonPublic.model_validate(person) if person else None,
-        academic=AcademicDossierSection(),
+        academic=_academic_section_for_user(db, user),
     )

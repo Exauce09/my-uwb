@@ -24,10 +24,23 @@ export type PersonPublic = {
   deleted_at: string | null
 }
 
+export type EnrollmentPublic = {
+  id: string
+  status: string
+  kind: string | null
+  academic_year_label: string
+  program_code: string
+  program_title: string
+  academic_unit_name: string
+  program_level_code: string | null
+  program_level_label: string | null
+}
+
 export type AcademicDossierSection = {
-  status: 'not_provisioned'
+  status: 'not_provisioned' | 'empty' | 'ready'
   message: string
-  enrollments: unknown[]
+  student_number?: string | null
+  enrollments: EnrollmentPublic[]
 }
 
 export type DossierPublic = {

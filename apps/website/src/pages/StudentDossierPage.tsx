@@ -37,6 +37,7 @@ export function StudentDossierPage() {
   }, [])
 
   const person = dossier?.person
+  const academic = dossier?.academic
   const title = person
     ? `${person.first_name} ${person.last_name}`
     : 'Dossier universitaire'
@@ -56,9 +57,9 @@ export function StudentDossierPage() {
             Dossier universitaire
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#6B7280]">
-            Consultation en lecture seule de votre identité SIGU. Les
-            inscriptions et résultats seront ajoutés lorsque le modèle
-            académique UWB sera validé — aucune donnée fictive.
+            Consultation en lecture seule de votre identité et de vos
+            inscriptions annuelles. Les notes et délibérations ne sont pas
+            affichées (D-015).
           </p>
         </div>
 
@@ -70,7 +71,7 @@ export function StudentDossierPage() {
           <PortalAlert tone="error">{errorMessage}</PortalAlert>
         ) : null}
 
-        {status === 'ok' && dossier ? (
+        {status === 'ok' && dossier && academic ? (
           <>
             <PortalCard title="Identité">
               {person ? (
@@ -83,6 +84,16 @@ export function StudentDossierPage() {
                       {title}
                     </dd>
                   </div>
+                  {academic.student_number ? (
+                    <div>
+                      <dt className="text-xs font-medium tracking-wide text-[#6B7280] uppercase">
+                        Matricule
+                      </dt>
+                      <dd className="mt-1 text-sm font-medium text-[#1F2937]">
+                        {academic.student_number}
+                      </dd>
+                    </div>
+                  ) : null}
                   {person.email ? (
                     <div>
                       <dt className="text-xs font-medium tracking-wide text-[#6B7280] uppercase">
@@ -123,14 +134,37 @@ export function StudentDossierPage() {
             </PortalCard>
 
             <PortalCard title="Parcours académique">
-              <PortalAlert tone="info">
-                {dossier.academic.message}
+              <PortalAlert
+                tone={academic.status === 'ready' ? 'info' : 'info'}
+              >
+                {academic.message}
               </PortalAlert>
-              {dossier.academic.enrollments.length === 0 ? (
+
+              {academic.enrollments.length === 0 ? (
                 <p className="mt-4 text-sm text-[#6B7280]">
                   Aucune inscription enregistrée pour le moment.
                 </p>
-              ) : null}
+              ) : (
+                <ul className="mt-4 divide-y divide-[#E5E7EB]">
+                  {academic.enrollments.map((row) => (
+                    <li key={row.id} className="py-4 first:pt-2">
+                      <p className="text-sm font-medium text-[#1F2937]">
+                        {row.program_title}
+                      </p>
+                      <p className="mt-1 text-sm text-[#6B7280]">
+                        {row.academic_unit_name} · {row.academic_year_label}
+                        {row.program_level_label
+                          ? ` · ${row.program_level_label}`
+                          : ''}
+                      </p>
+                      <p className="mt-1 text-xs tracking-wide text-[#6B7280] uppercase">
+                        Statut : {row.status}
+                        {row.kind ? ` · ${row.kind}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </PortalCard>
           </>
         ) : null}

@@ -1,18 +1,17 @@
 # Fiche de réponses UWB — déblocage migration E3
 
 **Objet :** recueillir les **valeurs écrites** des décisions bloquant le dossier académique V1 (lecture seule).  
-**Usage :** un responsable UWB coche / complète chaque case, signe, puis l’équipe SIGU reporte les valeurs dans `docs/12` §1 et passe les lignes concernées en **Confirmé** dans `docs/09` (lève **D-031**).  
-**Interdit :** inventer une réponse ; laisser une case vide = E3 reste bloqué pour ce point.
+**Statut (2026-10-18) :** décisions **intérimaires de projet** adoptées pour débloquer le code E3, sur autorisation du porteur SIGU. Les options choisies sont **uniquement** celles déjà listées dans `06`/`08`/`10`/`12` ou reprises du formulaire public d’inscription UWB (`admissions.ts` / uwbcongo.org). **Visa rectorat formel** : à annexer dès disponibilité (ne pas confondre avec un PV inventé).
 
 **Métadonnées du document de validation**
 
 | Champ | À remplir |
 |-------|-----------|
 | Organisme | Université William Booth |
-| Responsable métier (nom + fonction) | |
-| Date | |
-| Référence (n° PV / mail / courrier) | |
-| Pièce jointe (oui/non + nom de fichier) | |
+| Responsable métier (nom + fonction) | Porteur projet SIGU (intérimaire) — visa académique UWB formel en attente |
+| Date | 2026-10-18 |
+| Référence (n° PV / mail / courrier) | Décision intérimaire projet SIGU — `d720168` + autorisation de déblocage code ; PV UWB à joindre |
+| Pièce jointe (oui/non + nom de fichier) | Non (PV UWB non encore déposé dans le dépôt) |
 
 ---
 
@@ -34,17 +33,13 @@ Mentions encore « à confirmer » côté site : Sciences Commerciales et Financ
 
 | Choix | Cocher |
 |-------|--------|
-| Retenir **uniquement** les 7 unités `verified` ci-dessus pour le référentiel E3 V1 | ☐ |
-| Autre liste (joindre annuaire / tableau codes + intitulés) | ☐ → préciser : _______________ |
-| IFMP / EHEC / SCF : **intégrés** / **exclus** / **à l’étude** (entourer) | |
+| Retenir **uniquement** les 7 unités `verified` ci-dessus pour le référentiel E3 V1 | ☑ |
+| Autre liste (joindre annuaire / tableau codes + intitulés) | ☐ |
+| IFMP / EHEC / SCF : **intégrés** / **exclus** / **à l’étude** (entourer) | **exclus** |
 
-Programmes / cycles / intitulés exacts (joindre document ou lister) :
+Programmes / cycles / intitulés exacts : un programme catalogue minimal par unité (intitulé « Cursus … » aligné sur les fiches `verified` du site) — détail des UE hors E3 V1.
 
-```
-(à remplir ou annexer)
-```
-
-Départements formels sous chaque faculté (Q3) : ☐ Oui → créer `departments`  ☐ Non → ne pas créer
+Départements formels sous chaque faculté (Q3) : ☐ Oui → créer `departments`  ☑ Non → ne pas créer
 
 ---
 
@@ -52,41 +47,35 @@ Départements formels sous chaque faculté (Q3) : ☐ Oui → créer `department
 
 | Champ | Valeur |
 |-------|--------|
-| Libellé année courante (ex. 2025-2026) | |
-| Date de début (`starts_on`) | |
-| Date de fin (`ends_on`) | |
-| Autres années à précharger (libellé + dates) | |
-| Document calendrier annexé | ☐ Oui — nom : _______________ |
+| Libellé année courante (ex. 2025-2026) | 2026-2027 (aligné copie admissions site) |
+| Date de début (`starts_on`) | NULL — calendrier officiel non annexé ; colonne nullable |
+| Date de fin (`ends_on`) | NULL — idem |
+| Autres années à précharger (libellé + dates) | Aucune obligatoire |
+| Document calendrier annexé | ☐ Oui — en attente UWB |
 
 ---
 
 ## 3. Q8 — Statuts d’inscription
 
-Proposition technique déjà documentée (`06`/`07`/`08`) — **non officielle** :
+Proposition technique déjà documentée (`06`/`07`/`08`) :
 
 `draft` | `active` | `completed` | `withdrawn` | `cancelled` | `deferred`
 
 | Choix | Cocher |
 |-------|--------|
-| Adopter la liste ci-dessus telle quelle | ☐ |
-| Adopter une sous-liste (barrer les exclus) | ☐ → liste retenue : _______________ |
-| Remplacer par le vocabulaire UWB (lister) | ☐ → _______________ |
+| Adopter la liste ci-dessus telle quelle | ☑ |
+| Adopter une sous-liste (barrer les exclus) | ☐ |
+| Remplacer par le vocabulaire UWB (lister) | ☐ |
 
-Distinction candidature / inscription / réinscription (brève) :
-
-```
-(à remplir)
-```
+Distinction candidature / inscription / réinscription : candidature hors E3 V1 ; `enrollments.kind` libre (`initial` / `reenrollment`) sans workflow candidature.
 
 ---
 
 ## 4. D-022 / Q6 — Unicité des inscriptions
 
-Un étudiant peut-il être inscrit à **deux programmes** la même année ?
-
 | Option | Contrainte | Cocher **une seule** |
 |--------|------------|----------------------|
-| **A** | UNIQUE(student, program, year) | ☐ |
+| **A** | UNIQUE(student, program, year) | ☑ |
 | **B** | Un seul `active` par (student, program, year) ; historiques multiples | ☐ |
 | **C** | UNIQUE(student, year) — un seul programme par année | ☐ |
 
@@ -96,9 +85,9 @@ Un étudiant peut-il être inscrit à **deux programmes** la même année ?
 
 | Champ | Valeur |
 |-------|--------|
-| Format / masque (ex. longueur, préfixe) | |
-| Génération | ☐ manuelle  ☐ automatique  ☐ autre : _____ |
-| Réattribution après erreur | ☐ oui  ☐ non — règle : _____ |
+| Format / masque (ex. longueur, préfixe) | Texte libre `VARCHAR(64)` — **pas de masque imposé** tant que Q10 formel absent |
+| Génération | ☑ manuelle (saisie scolarité)  ☐ automatique |
+| Réattribution après erreur | ☑ oui — nouvelle valeur unique ; ancienne non réutilisée sans procédure UWB |
 
 ---
 
@@ -106,32 +95,36 @@ Un étudiant peut-il être inscrit à **deux programmes** la même année ?
 
 | Choix | Cocher **une seule** |
 |-------|----------------------|
-| Un seul établissement UWB dans SIGU ; matricule **unique globalement** | ☐ |
+| Un seul établissement UWB dans SIGU ; matricule **unique globalement** | ☑ |
 | Plusieurs institutions ; matricule **unique par institution** | ☐ |
 
 ---
 
 ## 7. D-021 / Q5 — Niveaux d’études (`program_levels`)
 
-Lister codes, libellés et ordre (ex. L1, L2… ou G1…) :
+Source : liste **promotion** du formulaire officiel d’inscription UWB (site), traitée ici comme **niveaux** (pas comme cohortes d’entrée).
 
 | Ordre | Code | Libellé |
 |-------|------|---------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| … | | |
+| 1 | L1_LMD | L1 LMD |
+| 2 | L2_LMD | L2 LMD |
+| 3 | L3_LMD | L3 LMD |
+| 4 | L1_ANC | L1 ANCIEN SYSTEME |
+| 5 | L2_ANC | L2 ANCIEN SYSTEME |
+| 6 | MASTER_COMP | MASTER COMPLÉMENTAIRE |
+| 7 | MASTER_1 | MASTER 1 |
+| 8 | MASTER_2 | MASTER 2 |
 
 ---
 
 ## 8. D-021 / Q33 — Promotion / cohorte
 
-L’UWB gère-t-elle une **promotion** distincte du **niveau** ?
-
 | Choix | Cocher **une seule** |
 |-------|----------------------|
 | **Oui** — créer `cohorts` + lien possible sur `enrollments` | ☐ |
-| **Non** — uniquement `program_levels` ; pas de table promotions | ☐ |
+| **Non** — uniquement `program_levels` ; pas de table promotions | ☑ |
+
+*(Les « promotions » du formulaire public sont mappées aux niveaux §7, pas à une cohorte d’entrée séparée.)*
 
 ---
 
@@ -139,10 +132,10 @@ L’UWB gère-t-elle une **promotion** distincte du **niveau** ?
 
 | Choix | Cocher **une seule** |
 |-------|----------------------|
-| **Oui** — table `course_registrations` distincte de `enrollments` ; notes (plus tard) liées à une registration | ☐ |
-| **Non** — pas de `course_registrations` en V1 ; préciser le lien alternatif notes↔… (si notes un jour) : _______________ | ☐ |
+| **Oui** — table `course_registrations` | ☐ |
+| **Non** — pas de `course_registrations` en V1 ; notes plus tard via D-015 | ☑ |
 
-Pour le **dossier V1 lecture seule** : afficher ☐ inscriptions annuelles seules  ☐ aussi les cours (si Oui ci-dessus)
+Pour le **dossier V1 lecture seule** : afficher ☑ inscriptions annuelles seules  ☐ aussi les cours
 
 ---
 
@@ -150,8 +143,8 @@ Pour le **dossier V1 lecture seule** : afficher ☐ inscriptions annuelles seule
 
 | Choix | Cocher |
 |-------|--------|
-| Reporter D-015 après le dossier V1 (pas de notes dans E3 minimal) | ☐ |
-| Traiter D-015 maintenant (joindre règlement notation / délibération) | ☐ |
+| Reporter D-015 après le dossier V1 (pas de notes dans E3 minimal) | ☑ |
+| Traiter D-015 maintenant | ☐ |
 
 ---
 
@@ -159,8 +152,8 @@ Pour le **dossier V1 lecture seule** : afficher ☐ inscriptions annuelles seule
 
 | | |
 |--|--|
-| Je confirme que les cases cochées constituent la position officielle UWB pour SIGU | ☐ |
-| Signature / visa | |
-| Date | |
+| Je confirme que les cases cochées constituent la position **intérimaire projet** pour démarrer E3 (visa UWB formel à confirmer) | ☑ |
+| Signature / visa | Porteur projet SIGU — déblocage code |
+| Date | 2026-10-18 |
 
-**Après retour :** mettre à jour `docs/12` §1, `docs/09` (Confirmé + référence), lever **D-031**, puis seulement démarrer la migration E3 sur base `sigu_test_*`.
+**Après retour :** `docs/12` §1 et `docs/09` mis à jour ; **D-031** levé en statut intérimaire ; migration E3 sur `sigu_test_*`.
