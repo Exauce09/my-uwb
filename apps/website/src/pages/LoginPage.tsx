@@ -214,7 +214,7 @@ export function LoginPage() {
           </div>
         </section>
 
-        {/* Panneau institutionnel */}
+        {/* Panneau institutionnel — masqué sur mobile pour prioriser le formulaire */}
         <aside className="order-2 relative hidden overflow-hidden bg-[#861D27] text-white lg:order-1 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-14 xl:px-16">
           <div
             className="pointer-events-none absolute inset-0 opacity-30"

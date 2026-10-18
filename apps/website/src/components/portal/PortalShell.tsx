@@ -7,10 +7,12 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import * as authApi from '../../api/auth'
 import { useAuth } from '../../auth/AuthContext'
 import { site } from '../../data/site'
+import type { PersonPublic } from '../../lib/types'
 import { portalUi } from './portalTheme'
 
 export type PortalRole = 'student' | 'teacher'
@@ -23,9 +25,11 @@ type NavItem = {
 }
 
 function navForRole(role: PortalRole, alsoOther: boolean): NavItem[] {
+  const home =
+    role === 'student' ? '/espace-etudiant' : '/espace-enseignant'
   const items: NavItem[] = [
     {
-      to: role === 'student' ? '/espace-etudiant' : '/espace-enseignant',
+      to: home,
       label: 'Accueil',
       icon: Home,
       end: true,
@@ -64,9 +68,36 @@ export function PortalShell({
 }) {
   const { user, logout, isStudent, isTeacher } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [person, setPerson] = useState<PersonPublic | null>(null)
+  const [personLoading, setPersonLoading] = useState(true)
+
   const alsoOther =
     (role === 'student' && isTeacher) || (role === 'teacher' && isStudent)
   const nav = navForRole(role, alsoOther)
+  const homeTo =
+    role === 'student' ? '/espace-etudiant' : '/espace-enseignant'
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setPersonLoading(true)
+      try {
+        const mePerson = await authApi.fetchMePerson()
+        if (!cancelled) setPerson(mePerson)
+      } catch {
+        if (!cancelled) setPerson(null)
+      } finally {
+        if (!cancelled) setPersonLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const displayName = person
+    ? `${person.first_name} ${person.last_name}`
+    : user?.full_name || user?.email || 'Compte'
 
   const sidebar = (
     <nav className="flex flex-col gap-1 p-3" aria-label="Navigation du portail">
@@ -79,10 +110,10 @@ export function PortalShell({
             end={item.end}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+              `flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition ${
                 isActive
-                  ? 'bg-[#FFF1F2] text-[#B91C2B]'
-                  : 'text-[#6B7280] hover:bg-[#FFF1F2]/70 hover:text-[#1F2937]'
+                  ? 'border-[#B91C2B] bg-[#FFF1F2] text-[#B91C2B]'
+                  : 'border-transparent text-[#6B7280] hover:bg-[#FFF1F2]/70 hover:text-[#1F2937]'
               }`
             }
           >
@@ -96,7 +127,7 @@ export function PortalShell({
           href={site.officialElearningUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#6B7280] transition hover:bg-[#FFF1F2]/70 hover:text-[#1F2937]"
+          className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-[#6B7280] transition hover:bg-[#FFF1F2]/70 hover:text-[#1F2937]"
         >
           <GraduationCap className="h-4 w-4 shrink-0" aria-hidden />
           E-Learning officiel
@@ -123,8 +154,8 @@ export function PortalShell({
                 <Menu className="h-5 w-5" />
               )}
             </button>
-            <Link to="/" className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-[#E5E7EB]">
+            <Link to={homeTo} className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-[#E5E7EB]">
                 <img
                   src={site.logoSrc}
                   alt=""
@@ -145,7 +176,7 @@ export function PortalShell({
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden min-w-0 text-right sm:block">
               <p className="truncate text-sm font-medium text-[#1F2937]">
-                {user?.full_name || user?.email}
+                {personLoading ? 'Chargement…' : displayName}
               </p>
               <p className="truncate text-xs text-[#6B7280]">{user?.email}</p>
             </div>
@@ -174,14 +205,20 @@ export function PortalShell({
           />
         ) : null}
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-[#E5E7EB] bg-white pt-16 transition-transform lg:hidden ${
+          className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-[#E5E7EB] bg-white pt-16 shadow-lg transition-transform lg:hidden ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
+          <div className="border-b border-[#E5E7EB] px-4 py-3 sm:hidden">
+            <p className="truncate text-sm font-medium text-[#1F2937]">
+              {personLoading ? 'Chargement…' : displayName}
+            </p>
+            <p className="truncate text-xs text-[#6B7280]">{user?.email}</p>
+          </div>
           {sidebar}
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <main className="min-w-0 flex-1 bg-[#FFFFFF] px-4 py-6 sm:px-6 sm:py-8">
           {children}
         </main>
       </div>
