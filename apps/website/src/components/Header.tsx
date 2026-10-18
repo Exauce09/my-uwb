@@ -161,9 +161,17 @@ export function Header({ transparentOnHero = false }: HeaderProps) {
                 ))}
               </ul>
 
-              <div className="mt-8">
+              <div className="mt-8 space-y-3">
+                <Button
+                  to="/connexion"
+                  className="w-full rounded-none"
+                  onClick={() => setOpen(false)}
+                >
+                  Connexion
+                </Button>
                 <Button
                   to="/admissions"
+                  variant="ghost"
                   className="w-full rounded-none"
                   onClick={() => setOpen(false)}
                 >
@@ -292,8 +300,15 @@ export function Header({ transparentOnHero = false }: HeaderProps) {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <Button
+                to="/connexion"
+                variant={transparent ? 'outline' : 'ghost'}
+                className="hidden rounded-none sm:inline-flex"
+              >
+                Connexion
+              </Button>
+              <Button
                 to="/admissions"
-                className={`hidden rounded-none sm:inline-flex ${
+                className={`hidden rounded-none md:inline-flex ${
                   transparent ? 'bg-white text-uwb-red hover:bg-white/90' : ''
                 }`}
               >

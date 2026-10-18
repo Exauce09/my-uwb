@@ -64,8 +64,10 @@ export const site = {
     ] satisfies ContactItem[],
   },
   links: {
+    login: '/connexion',
     studentSpace: '/espace-etudiant',
-    sigu: '/sigu',
+    teacherSpace: '/espace-enseignant',
+    sigu: '/connexion',
   },
 }
 

@@ -25,19 +25,26 @@ export function HomePage() {
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-5 sm:px-8 md:flex-row md:items-center">
           <Reveal>
             <h2 className="font-display text-3xl font-semibold text-uwb-blue">
-              Services numériques & SIGU-UWB
+              Portails étudiant & enseignant
             </h2>
             <p className="mt-2 text-sm text-uwb-muted">
-              Portails à venir — liens officiels déjà disponibles.
+              Connectez-vous avec votre compte SIGU pour accéder à votre espace.
             </p>
           </Reveal>
           <Reveal delay={0.08}>
-            <div className="flex gap-3">
-              <Button to="/services-numeriques" className="rounded-none">
-                Services
+            <div className="flex flex-wrap gap-3">
+              <Button to="/connexion" className="rounded-none">
+                Se connecter
               </Button>
-              <Button to="/sigu" variant="ghost" className="rounded-none">
-                SIGU
+              <Button to="/espace-etudiant" variant="ghost" className="rounded-none">
+                Espace étudiant
+              </Button>
+              <Button
+                to="/espace-enseignant"
+                variant="ghost"
+                className="rounded-none"
+              >
+                Espace enseignant
               </Button>
             </div>
           </Reveal>

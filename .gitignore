@@ -64,3 +64,7 @@ backend/.e2e_admin_email
 backend/_pg_test_env.ps1
 
 backend/.e2e_admin_password
+
+backend/.e2e_student_password
+
+backend/.e2e_teacher_password

@@ -1,5 +1,7 @@
 import { lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './auth/AuthContext'
+import { RequireAuth } from './auth/RequireAuth'
 import { MainLayout } from './layouts/MainLayout'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -53,66 +55,77 @@ const SearchPage = lazy(() =>
 const ComingSoonPage = lazy(() =>
   import('./pages/ComingSoonPage').then((m) => ({ default: m.ComingSoonPage })),
 )
+const LoginPage = lazy(() =>
+  import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+)
+const StudentPortalPage = lazy(() =>
+  import('./pages/StudentPortalPage').then((m) => ({
+    default: m.StudentPortalPage,
+  })),
+)
+const TeacherPortalPage = lazy(() =>
+  import('./pages/TeacherPortalPage').then((m) => ({
+    default: m.TeacherPortalPage,
+  })),
+)
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="presentation" element={<PresentationPage />} />
-          <Route path="facultes" element={<FacultiesPage />} />
-          <Route path="formations" element={<FacultiesPage />} />
-          <Route path="facultes/:facultyId" element={<FacultyDetailPage />} />
-          <Route
-            path="formations/:formationSlug"
-            element={<FormationDetailPage />}
-          />
-          <Route path="admissions" element={<AdmissionsPage />} />
-          <Route path="recherche" element={<ResearchPage />} />
-          <Route path="actualites" element={<NewsPage />} />
-          <Route path="actualites/:articleId" element={<NewsDetailPage />} />
-          <Route path="publications" element={<PublicationsPage />} />
-          <Route path="bibliotheque" element={<LibraryPage />} />
-          <Route path="bibliotheque/:documentId" element={<DocumentPage />} />
-          <Route path="contact" element={<ContactPage />} />
-          <Route path="chercher" element={<SearchPage />} />
-          <Route
-            path="recherche-contenu"
-            element={<Navigate to="/chercher" replace />}
-          />
-          <Route
-            path="services-numeriques"
-            element={
-              <ComingSoonPage
-                title="Services numériques"
-                description="Accès centralisé aux services numériques de l’UWB (e-learning, bibliothèque, portails). Les liens officiels restent disponibles en attendant l’intégration complète."
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="presentation" element={<PresentationPage />} />
+            <Route path="facultes" element={<FacultiesPage />} />
+            <Route path="formations" element={<FacultiesPage />} />
+            <Route path="facultes/:facultyId" element={<FacultyDetailPage />} />
+            <Route
+              path="formations/:formationSlug"
+              element={<FormationDetailPage />}
+            />
+            <Route path="admissions" element={<AdmissionsPage />} />
+            <Route path="recherche" element={<ResearchPage />} />
+            <Route path="actualites" element={<NewsPage />} />
+            <Route path="actualites/:articleId" element={<NewsDetailPage />} />
+            <Route path="publications" element={<PublicationsPage />} />
+            <Route path="bibliotheque" element={<LibraryPage />} />
+            <Route path="bibliotheque/:documentId" element={<DocumentPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="chercher" element={<SearchPage />} />
+            <Route
+              path="recherche-contenu"
+              element={<Navigate to="/chercher" replace />}
+            />
+            <Route
+              path="services-numeriques"
+              element={
+                <ComingSoonPage
+                  title="Services numériques"
+                  description="Accès centralisé aux services numériques de l’UWB (e-learning, bibliothèque, portails). Les liens officiels restent disponibles en attendant l’intégration complète."
+                />
+              }
+            />
+            <Route path="connexion" element={<LoginPage />} />
+            <Route element={<RequireAuth role="student" />}>
+              <Route path="espace-etudiant" element={<StudentPortalPage />} />
+            </Route>
+            <Route element={<RequireAuth role="teacher" />}>
+              <Route
+                path="espace-enseignant"
+                element={<TeacherPortalPage />}
               />
-            }
-          />
-          <Route
-            path="espace-etudiant"
-            element={
-              <ComingSoonPage
-                title="Espace étudiant"
-                description="Portail réservé aux étudiants de l’UWB. Inscriptions, dossiers et services numériques seront branchés ultérieurement sur SIGU-UWB."
-              />
-            }
-          />
-          <Route
-            path="sigu"
-            element={
-              <ComingSoonPage
-                title="SIGU-UWB"
-                description="Le Système Intégré de Gestion Universitaire centralisera les opérations académiques, administratives et financières. Développement en cours — hors ligne du site public pour l’instant."
-              />
-            }
-          />
-          <Route path="404" element={<NotFoundPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-        <Route path="home" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+            </Route>
+            <Route
+              path="sigu"
+              element={<Navigate to="/connexion" replace />}
+            />
+            <Route path="404" element={<NotFoundPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+          <Route path="home" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

@@ -34,8 +34,9 @@ export const footerNav = {
     { label: 'Bibliothèque virtuelle', to: '/bibliotheque' },
   ],
   services: [
-    { label: 'Espace étudiant (bientôt)', to: '/espace-etudiant' },
-    { label: 'SIGU-UWB (bientôt)', to: '/sigu' },
+    { label: 'Connexion', to: '/connexion' },
+    { label: 'Espace étudiant', to: '/espace-etudiant' },
+    { label: 'Espace enseignant', to: '/espace-enseignant' },
     { label: 'Contact', to: '/contact' },
   ],
 }
