@@ -7,7 +7,8 @@ Objectif : obtenir des réponses institutionnelles **avant** toute migration Pos
 
 **Légende :** chaque question = **décision métier en attente**. Les options techniques éventuelles sont rappelées ; leurs conséquences sont dans `06` / `08` / `09`.
 
-**Phase 3 (2026-10-18) :** audit dans `docs/12` §6 et `docs/09` (D-031) — aucune réponse écrite UWB aux questions V1 n’a été trouvée dans le dépôt ; migration E3 **non démarrée**.
+**Phase 3 (2026-10-18) :** audit dans `docs/12` §6 et `docs/09` (D-031) — aucune réponse écrite UWB aux questions V1 n’a été trouvée dans le dépôt ; migration E3 **non démarrée**.  
+**Fiche de réponses à compléter :** `docs/13-fiche-reponses-uwb-e3.md`.
 
 ---
 

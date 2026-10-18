@@ -300,7 +300,9 @@ Pour chaque décision, fournir **explicitement** :
 | Migration E3 / modèles académiques / enrichissement API dossier | **Non autorisés** |
 | Notes / délibérations (D-015) | Hors périmètre (reste ouvert) |
 
-Dès que §1 est rempli avec valeurs + références, mettre à jour `09` (Confirmé), lever D-031, puis appliquer le plan §3 (migration réversible sur `sigu_test_*` uniquement).
+**Fiche à faire remplir par l’UWB :** `docs/13-fiche-reponses-uwb-e3.md`.
+
+Dès que la fiche `13` est renseignée et que §1 est reporté avec valeurs + références, mettre à jour `09` (Confirmé), lever D-031, puis appliquer le plan §3 (migration réversible sur `sigu_test_*` uniquement).
 
 ### 6.4 Plan technique gelé (rappel — non exécuté)
 

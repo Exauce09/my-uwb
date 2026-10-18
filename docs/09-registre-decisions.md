@@ -34,7 +34,7 @@ Document vivant. Distingue **confirmé (doc dépôt)**, **proposé (conception p
 | D-028 | Phase 2.1 | Tables append-only vs soft-delete documentées ; restriction si notes/paiements | **Proposé** | Rétention légale = UWB |
 | D-029 | Phase 2.1 | Unicité matricule : portée institution vs global si multi-établissements | **Non décidé** | Q10 / Q34 (`12` ; anciennement cité Q7/Q34 par erreur de renvoi) |
 | D-030 | Phase 2.1 | `departments` créés seulement si UWB confirme des départements formels | **Proposé** | Q3 — pas d’imposition structurelle |
-| D-031 | Phase 3 | Migration académique E3 (dossier V1 lecture seule) | **Bloqué** | Audit 2026-10-18 : aucune valeur écrite des décisions V1 dans le dépôt — voir `12` §6 |
+| D-031 | Phase 3 | Migration académique E3 (dossier V1 lecture seule) | **Bloqué** | Audit 2026-10-18 : aucune valeur écrite des décisions V1 dans le dépôt — voir `12` §6 ; instrument : `13-fiche-reponses-uwb-e3.md` |
 
 ## Phase 3 — audit de clôture (2026-10-18)
 
@@ -42,7 +42,9 @@ Document vivant. Distingue **confirmé (doc dépôt)**, **proposé (conception p
 
 **Conséquence :** les lignes D-016, D-020, D-021, D-022, D-029 et les questions Q5–Q8 / Q10 / Q32–Q34 restent **ouvertes**. D-015 (notes) reste hors périmètre V1. **Aucune migration Alembic E3** ni modèle académique n’est créée sur la base de cet audit.
 
-**Levée du blocage :** renseigner `docs/12` §1 (valeur + responsable + date + référence écrite), puis passer les lignes concernées en **Confirmé** ici avec la même référence.
+**Instrument de collecte :** `docs/13-fiche-reponses-uwb-e3.md` (cases à cocher = options déjà documentées dans `06`/`08`/`10`/`12` uniquement).
+
+**Levée du blocage :** fiche `13` remplie et signée → reporter dans `docs/12` §1 (valeur + responsable + date + référence écrite), puis passer les lignes concernées en **Confirmé** ici avec la même référence.
 
 ## Mode d’emploi
 
