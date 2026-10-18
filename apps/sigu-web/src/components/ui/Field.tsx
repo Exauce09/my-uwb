@@ -13,7 +13,7 @@ export function Field({ label, error, hint, id, className = "", ...props }: Prop
       <span className="font-medium text-[var(--sigu-ink)]">{label}</span>
       <input
         id={fieldId}
-        className={`w-full rounded-md border border-[var(--sigu-line)] bg-white px-3 py-2 text-[var(--sigu-ink)] shadow-sm placeholder:text-[var(--sigu-muted)] disabled:bg-[#f1f5f9] ${className}`}
+        className={`w-full rounded-sm border border-[var(--sigu-line)] bg-white px-3 py-2.5 text-[var(--sigu-ink)] placeholder:text-[var(--sigu-muted)] focus:border-[var(--sigu-accent)] disabled:bg-[var(--sigu-sand)] ${className}`}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${fieldId}-error` : undefined}
         {...props}

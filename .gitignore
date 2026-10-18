@@ -68,3 +68,5 @@ backend/.e2e_admin_password
 backend/.e2e_student_password
 
 backend/.e2e_teacher_password
+
+apps/sigu-web/public/brand/uwbfin.png

@@ -8,7 +8,7 @@ import { ApiError } from "../lib/api";
 import { API_BASE_URL } from "../lib/config";
 
 export function LoginPage() {
-  const { user, loading, login } = useAuth();
+  const { user, loading, login, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +19,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && user) {
+  if (!loading && user && isAdmin) {
     return <Navigate to="/" replace />;
   }
 
@@ -30,7 +30,8 @@ export function LoginPage() {
     const nextErrors: typeof fieldErrors = {};
     if (!email.trim()) nextErrors.email = "L’e-mail est obligatoire.";
     if (password.length < 8) {
-      nextErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
+      nextErrors.password =
+        "Le mot de passe doit contenir au moins 8 caractères.";
     }
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
@@ -38,7 +39,14 @@ export function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      const me = await login(email.trim(), password);
+      if (!me.roles.includes("admin")) {
+        await logout();
+        setError(
+          "Ce compte n’a pas le rôle admin. Utilisez le compte administrateur ici ; étudiants/enseignants → site public (/connexion).",
+        );
+        return;
+      }
       navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -53,15 +61,28 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-[var(--sigu-line)] bg-white/90 p-8 shadow-[0_20px_60px_-30px_rgba(15,39,68,0.45)]">
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--sigu-muted)]">
-          Université William Booth
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--sigu-ink)]">
-          SIGU
-        </h1>
-        <p className="mt-2 text-sm text-[var(--sigu-muted)]">
-          Connexion administrateur — e-mail et mot de passe du compte API.
+      <div className="w-full max-w-md border border-[var(--sigu-line)] bg-white p-8 shadow-[0_24px_60px_-28px_rgba(26,26,26,0.35)]">
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-black/10">
+            <img
+              src="/brand/logo-uwb.webp"
+              alt="Logo Université William Booth"
+              className="h-[84%] w-[84%] object-contain"
+            />
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-[var(--sigu-muted)] uppercase">
+              Université William Booth
+            </p>
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--sigu-ink)]">
+              SIGU
+            </h1>
+          </div>
+        </div>
+
+        <p className="mt-5 text-sm leading-relaxed text-[var(--sigu-muted)]">
+          Connexion administrateur. Étudiants et enseignants : portail du site
+          UWB.
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
@@ -96,7 +117,10 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-xs text-[var(--sigu-muted)]">
+        <p className="mt-8 text-center text-[10px] font-semibold tracking-[0.18em] text-[var(--sigu-muted)] uppercase">
+          Dignité · Honneur · Excellence
+        </p>
+        <p className="mt-3 text-center text-[11px] text-[var(--sigu-muted)]/80">
           API : <code>{API_BASE_URL}</code>
         </p>
       </div>

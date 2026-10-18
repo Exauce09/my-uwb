@@ -14,7 +14,7 @@ import type { UserPublic } from "../lib/types";
 type AuthState = {
   user: UserPublic | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserPublic>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   isAdmin: boolean;
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.login(email, password);
     const me = await authApi.fetchMe();
     setUser(me);
+    return me;
   }, []);
 
   const logout = useCallback(async () => {
