@@ -61,8 +61,10 @@ export function PortalHomeContent({ role }: { role: PortalRole }) {
           {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#6B7280]">
-          Session SIGU active. Les dossiers académiques et outils métier seront
-          branchés ici au fil des modules — sans données fictives.
+          Session SIGU active.{" "}
+          {role === 'student'
+            ? 'Consultez votre dossier universitaire (inscriptions annuelles). Les notes et l’e-learning SIGU ne sont pas disponibles ici.'
+            : 'Espace réservé à l’identité et aux liens institutionnels. Aucun outil pédagogique (notes, cours, délibérations) n’est proposé dans SIGU pour l’instant.'}
         </p>
       </div>
 
