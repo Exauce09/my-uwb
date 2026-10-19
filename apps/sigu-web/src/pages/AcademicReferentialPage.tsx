@@ -22,6 +22,19 @@ import type {
   ProgramPublic,
 } from "../lib/types";
 
+/** Nomenclature D-021 intérimaire (docs/13 §7). */
+const D021_LEVEL_PRESETS: { code: string; label: string; sort_order: number }[] =
+  [
+    { code: "L1_LMD", label: "L1 LMD", sort_order: 1 },
+    { code: "L2_LMD", label: "L2 LMD", sort_order: 2 },
+    { code: "L3_LMD", label: "L3 LMD", sort_order: 3 },
+    { code: "L1_ANC", label: "L1 ANCIEN SYSTEME", sort_order: 4 },
+    { code: "L2_ANC", label: "L2 ANCIEN SYSTEME", sort_order: 5 },
+    { code: "MASTER_COMP", label: "MASTER COMPLÉMENTAIRE", sort_order: 6 },
+    { code: "MASTER_1", label: "MASTER 1", sort_order: 7 },
+    { code: "MASTER_2", label: "MASTER 2", sort_order: 8 },
+  ];
+
 export function AcademicReferentialPage() {
   const [units, setUnits] = useState<AcademicUnitRef[]>([]);
   const [programs, setPrograms] = useState<ProgramPublic[]>([]);
@@ -59,6 +72,9 @@ export function AcademicReferentialPage() {
     label: "",
     sort_order: "1",
   });
+  const [editingYear, setEditingYear] = useState<AcademicYearPublic | null>(
+    null,
+  );
   const pageSize = 10;
 
   const load = useCallback(async () => {
@@ -196,13 +212,9 @@ export function AcademicReferentialPage() {
   async function onCreateLevel(event: FormEvent) {
     event.preventDefault();
     if (saving) return;
-    const sortOrder = Number.parseInt(levelForm.sort_order, 10);
-    if (
-      !levelForm.code.trim() ||
-      !levelForm.label.trim() ||
-      Number.isNaN(sortOrder)
-    ) {
-      setError("Code, libellé et ordre sont obligatoires.");
+    const preset = D021_LEVEL_PRESETS.find((p) => p.code === levelForm.code);
+    if (!preset) {
+      setError("Sélectionnez un code D-021.");
       return;
     }
     setSaving(true);
@@ -210,15 +222,38 @@ export function AcademicReferentialPage() {
     setSuccess(null);
     try {
       const created = await createProgramLevel({
-        code: levelForm.code.trim(),
-        label: levelForm.label.trim(),
-        sort_order: sortOrder,
+        code: preset.code,
+        label: levelForm.label.trim() || preset.label,
+        sort_order: Number.parseInt(levelForm.sort_order, 10) || preset.sort_order,
       });
       setSuccess(`Niveau ${created.code} créé.`);
-      setLevelForm({ code: "", label: "", sort_order: String(sortOrder + 1) });
+      setLevelForm({ code: "", label: "", sort_order: "1" });
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Création impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onSaveYear(event: FormEvent) {
+    event.preventDefault();
+    if (!editingYear || saving) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await updateAcademicYear(editingYear.id, {
+        label: editingYear.label.trim(),
+        starts_on: editingYear.starts_on,
+        ends_on: editingYear.ends_on,
+        is_current: editingYear.is_current,
+      });
+      setSuccess("Année mise à jour.");
+      setEditingYear(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
     } finally {
       setSaving(false);
     }
@@ -247,6 +282,10 @@ export function AcademicReferentialPage() {
   }
 
   const programPages = Math.max(1, Math.ceil(programTotal / pageSize));
+  const existingLevelCodes = new Set(levels.map((lv) => lv.code));
+  const missingLevelPresets = D021_LEVEL_PRESETS.filter(
+    (p) => !existingLevelCodes.has(p.code),
+  );
 
   return (
     <div className="space-y-6">
@@ -267,6 +306,35 @@ export function AcademicReferentialPage() {
 
       {error ? <Alert tone="error">{error}</Alert> : null}
       {success ? <Alert tone="success">{success}</Alert> : null}
+
+      <section className="rounded-xl border border-[var(--sigu-line)] bg-white p-5">
+        <h3 className="font-semibold text-[var(--sigu-ink)]">
+          Unités académiques (D-016)
+        </h3>
+        <p className="mt-1 text-sm text-[var(--sigu-muted)]">
+          Lecture seule — 7 unités verified ; IFMP / EHEC / SCF exclus. Pas de
+          création ici.
+        </p>
+        {units.length === 0 && !loading ? (
+          <p className="mt-4 text-sm text-[var(--sigu-muted)]">
+            Aucune unité — exécutez le seed E3 sur la base de test.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-[var(--sigu-line)]">
+            {units.map((u) => (
+              <li key={u.id} className="py-2 text-sm">
+                <span className="font-medium text-[var(--sigu-ink)]">
+                  {u.code}
+                </span>
+                <span className="text-[var(--sigu-muted)]">
+                  {" "}
+                  — {u.name} ({u.kind})
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="rounded-xl border border-[var(--sigu-line)] bg-white p-5">
         <h3 className="font-semibold text-[var(--sigu-ink)]">Programmes</h3>
@@ -541,19 +609,91 @@ export function AcademicReferentialPage() {
                     {y.starts_on || "—"} → {y.ends_on || "—"}
                   </p>
                 </div>
-                {!y.is_current ? (
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => void onSetCurrentYear(y)}
+                    onClick={() => setEditingYear(y)}
                   >
-                    Définir courante
+                    Modifier
                   </Button>
-                ) : null}
+                  {!y.is_current ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void onSetCurrentYear(y)}
+                    >
+                      Définir courante
+                    </Button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
         )}
+
+        {editingYear ? (
+          <form
+            onSubmit={onSaveYear}
+            className="mt-4 grid gap-3 border-t border-[var(--sigu-line)] pt-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <Field
+              label="Libellé"
+              value={editingYear.label}
+              onChange={(e) =>
+                setEditingYear({ ...editingYear, label: e.target.value })
+              }
+              required
+            />
+            <Field
+              label="Début"
+              type="date"
+              value={editingYear.starts_on || ""}
+              onChange={(e) =>
+                setEditingYear({
+                  ...editingYear,
+                  starts_on: e.target.value || null,
+                })
+              }
+            />
+            <Field
+              label="Fin"
+              type="date"
+              value={editingYear.ends_on || ""}
+              onChange={(e) =>
+                setEditingYear({
+                  ...editingYear,
+                  ends_on: e.target.value || null,
+                })
+              }
+            />
+            <label className="flex items-end gap-2 pb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={editingYear.is_current}
+                onChange={(e) =>
+                  setEditingYear({
+                    ...editingYear,
+                    is_current: e.target.checked,
+                  })
+                }
+              />
+              <span>Année courante</span>
+            </label>
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
+              <Button type="submit" disabled={saving}>
+                Enregistrer l’année
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditingYear(null)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </form>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-[var(--sigu-line)] bg-white p-5">
@@ -561,46 +701,66 @@ export function AcademicReferentialPage() {
           Niveaux d’études
         </h3>
         <p className="mt-1 text-sm text-[var(--sigu-muted)]">
-          Liste intérimaire D-021 (promotions du formulaire public mappées en
-          niveaux). Pas de table cohortes.
+          Nomenclature D-021 uniquement (8 codes). Pas de table cohortes.
         </p>
-        <form
-          onSubmit={onCreateLevel}
-          className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <Field
-            label="Code"
-            value={levelForm.code}
-            onChange={(e) =>
-              setLevelForm((f) => ({ ...f, code: e.target.value }))
-            }
-            placeholder="ex. L1_LMD"
-            required
-          />
-          <Field
-            label="Libellé"
-            value={levelForm.label}
-            onChange={(e) =>
-              setLevelForm((f) => ({ ...f, label: e.target.value }))
-            }
-            placeholder="ex. L1 LMD"
-            required
-          />
-          <Field
-            label="Ordre"
-            type="number"
-            value={levelForm.sort_order}
-            onChange={(e) =>
-              setLevelForm((f) => ({ ...f, sort_order: e.target.value }))
-            }
-            required
-          />
-          <div className="flex items-end">
-            <Button type="submit" disabled={saving}>
-              Créer le niveau
-            </Button>
-          </div>
-        </form>
+        {missingLevelPresets.length > 0 ? (
+          <form
+            onSubmit={onCreateLevel}
+            className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium text-[var(--sigu-ink)]">Code D-021</span>
+              <select
+                className="w-full rounded-sm border border-[var(--sigu-line)] bg-white px-3 py-2 text-sm"
+                value={levelForm.code}
+                onChange={(e) => {
+                  const preset = D021_LEVEL_PRESETS.find(
+                    (p) => p.code === e.target.value,
+                  );
+                  setLevelForm({
+                    code: e.target.value,
+                    label: preset?.label || "",
+                    sort_order: String(preset?.sort_order ?? 1),
+                  });
+                }}
+                required
+              >
+                <option value="">Sélectionner…</option>
+                {missingLevelPresets.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.code} — {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Field
+              label="Libellé"
+              value={levelForm.label}
+              onChange={(e) =>
+                setLevelForm((f) => ({ ...f, label: e.target.value }))
+              }
+              required
+            />
+            <Field
+              label="Ordre"
+              type="number"
+              value={levelForm.sort_order}
+              onChange={(e) =>
+                setLevelForm((f) => ({ ...f, sort_order: e.target.value }))
+              }
+              required
+            />
+            <div className="flex items-end">
+              <Button type="submit" disabled={saving}>
+                Créer le niveau
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <p className="mt-4 text-sm text-[var(--sigu-muted)]">
+            Les 8 niveaux D-021 sont déjà enregistrés.
+          </p>
+        )}
 
         {levels.length === 0 && !loading ? (
           <p className="mt-4 text-sm text-[var(--sigu-muted)]">

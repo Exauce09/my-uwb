@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   createEnrollment,
   createStudentProfile,
+  deleteEnrollment,
   fetchAcademicCatalog,
   getStudentProfile,
   listStudentProfiles,
   updateEnrollment,
+  updateStudentProfile,
 } from "../api/academic";
 import { listPersons } from "../api/persons";
 import { Alert } from "../components/ui/Alert";
@@ -27,6 +29,8 @@ const ENROLLMENT_STATUSES = [
   "cancelled",
   "deferred",
 ] as const;
+
+const ENROLLMENT_KINDS = ["initial", "reenrollment"] as const;
 
 export function StudentDossiersPage() {
   const [items, setItems] = useState<StudentProfileListItem[]>([]);
@@ -196,6 +200,57 @@ export function StudentDossiersPage() {
       await openDetail(selected.id);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
+    }
+  }
+
+  async function onChangeEnrollmentLevel(id: string, levelId: string) {
+    if (!selected) return;
+    setError(null);
+    setSuccess(null);
+    try {
+      await updateEnrollment(id, {
+        program_level_id: levelId || null,
+      });
+      setSuccess("Niveau d’inscription mis à jour.");
+      await openDetail(selected.id);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
+    }
+  }
+
+  async function onRemoveEnrollment(id: string) {
+    if (!selected) return;
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteEnrollment(id);
+      setSuccess("Inscription retirée (suppression logique).");
+      await openDetail(selected.id);
+      await loadList();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Suppression impossible.");
+    }
+  }
+
+  async function onSaveProfile(event: FormEvent) {
+    event.preventDefault();
+    if (!selected || saving) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await updateStudentProfile(selected.id, {
+        student_number: selected.student_number.trim(),
+        status: selected.status,
+        entry_date: selected.entry_date,
+      });
+      setSelected(updated);
+      setSuccess("Profil mis à jour.");
+      await loadList();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -396,9 +451,46 @@ export function StudentDossiersPage() {
               {selected.person.last_name} {selected.person.first_name}
             </h3>
             <p className="text-sm text-[var(--sigu-muted)]">
-              Matricule {selected.student_number} · profil {selected.status}
+              {selected.person.email || "Sans e-mail"}
             </p>
           </div>
+
+          <form
+            onSubmit={onSaveProfile}
+            className="grid gap-3 sm:grid-cols-3"
+          >
+            <Field
+              label="Matricule"
+              value={selected.student_number}
+              onChange={(e) =>
+                setSelected({ ...selected, student_number: e.target.value })
+              }
+              required
+            />
+            <Field
+              label="Statut profil"
+              value={selected.status}
+              onChange={(e) =>
+                setSelected({ ...selected, status: e.target.value })
+              }
+            />
+            <Field
+              label="Date d’entrée"
+              type="date"
+              value={selected.entry_date || ""}
+              onChange={(e) =>
+                setSelected({
+                  ...selected,
+                  entry_date: e.target.value || null,
+                })
+              }
+            />
+            <div className="sm:col-span-3">
+              <Button type="submit" disabled={saving}>
+                Enregistrer le profil
+              </Button>
+            </div>
+          </form>
 
           <div>
             <h4 className="text-sm font-semibold text-[var(--sigu-ink)]">
@@ -417,29 +509,54 @@ export function StudentDossiersPage() {
                   >
                     <div>
                       <p className="text-sm font-medium text-[var(--sigu-ink)]">
-                        {enr.program.title}
+                        {enr.program.code} — {enr.program.title}
                       </p>
                       <p className="text-xs text-[var(--sigu-muted)]">
                         {enr.program.academic_unit_name} ·{" "}
                         {enr.academic_year.label}
                         {enr.program_level
-                          ? ` · ${enr.program_level.label}`
+                          ? ` · ${enr.program_level.code} ${enr.program_level.label}`
                           : ""}
+                        {enr.kind ? ` · ${enr.kind}` : ""}
                       </p>
                     </div>
-                    <select
-                      className="rounded-sm border border-[var(--sigu-line)] bg-white px-2 py-1.5 text-sm"
-                      value={enr.status}
-                      onChange={(e) =>
-                        void onChangeEnrollmentStatus(enr.id, e.target.value)
-                      }
-                    >
-                      {ENROLLMENT_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        className="rounded-sm border border-[var(--sigu-line)] bg-white px-2 py-1.5 text-sm"
+                        value={enr.program_level?.id || ""}
+                        onChange={(e) =>
+                          void onChangeEnrollmentLevel(enr.id, e.target.value)
+                        }
+                        aria-label="Niveau"
+                      >
+                        <option value="">Niveau —</option>
+                        {(catalog?.program_levels || []).map((lv) => (
+                          <option key={lv.id} value={lv.id}>
+                            {lv.code} — {lv.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="rounded-sm border border-[var(--sigu-line)] bg-white px-2 py-1.5 text-sm"
+                        value={enr.status}
+                        onChange={(e) =>
+                          void onChangeEnrollmentStatus(enr.id, e.target.value)
+                        }
+                      >
+                        {ENROLLMENT_STATUSES.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void onRemoveEnrollment(enr.id)}
+                      >
+                        Retirer
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -513,7 +630,7 @@ export function StudentDossiersPage() {
                 <option value="">—</option>
                 {(catalog?.program_levels || []).map((lv) => (
                   <option key={lv.id} value={lv.id}>
-                    {lv.label}
+                    {lv.code} — {lv.label}
                   </option>
                 ))}
               </select>
@@ -534,13 +651,22 @@ export function StudentDossiersPage() {
                 ))}
               </select>
             </label>
-            <Field
-              label="Type"
-              value={enrollmentForm.kind}
-              onChange={(e) =>
-                setEnrollmentForm((f) => ({ ...f, kind: e.target.value }))
-              }
-            />
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium text-[var(--sigu-ink)]">Type</span>
+              <select
+                className="w-full rounded-sm border border-[var(--sigu-line)] bg-white px-3 py-2 text-sm"
+                value={enrollmentForm.kind}
+                onChange={(e) =>
+                  setEnrollmentForm((f) => ({ ...f, kind: e.target.value }))
+                }
+              >
+                {ENROLLMENT_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div className="flex items-end">
               <Button type="submit" disabled={saving || !catalog?.programs.length}>
                 Ajouter l’inscription

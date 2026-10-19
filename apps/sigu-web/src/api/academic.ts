@@ -64,6 +64,12 @@ export async function updateProgram(
   });
 }
 
+export async function deleteProgram(id: string): Promise<ProgramPublic> {
+  return apiRequest<ProgramPublic>(`/api/v1/academic/programs/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function listAcademicYears(params?: {
   page?: number;
   pageSize?: number;
@@ -178,6 +184,14 @@ export async function updateStudentProfile(
   });
 }
 
+export async function deleteStudentProfile(
+  id: string,
+): Promise<StudentProfilePublic> {
+  return apiRequest<StudentProfilePublic>(`/api/v1/student-profiles/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function createEnrollment(body: {
   student_profile_id: string;
   program_id: string;
@@ -198,6 +212,8 @@ export async function updateEnrollment(
   body: {
     status?: string;
     kind?: string | null;
+    program_id?: string;
+    academic_year_id?: string;
     program_level_id?: string | null;
     enrolled_on?: string | null;
     closed_on?: string | null;
@@ -206,5 +222,13 @@ export async function updateEnrollment(
   return apiRequest<EnrollmentAdminPublic>(`/api/v1/enrollments/${id}`, {
     method: "PATCH",
     body,
+  });
+}
+
+export async function deleteEnrollment(
+  id: string,
+): Promise<EnrollmentAdminPublic> {
+  return apiRequest<EnrollmentAdminPublic>(`/api/v1/enrollments/${id}`, {
+    method: "DELETE",
   });
 }
