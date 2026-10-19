@@ -56,3 +56,77 @@ export type PersonCreateInput = {
 export type ApiErrorBody = {
   detail?: string | { msg?: string; loc?: unknown[] }[];
 };
+
+export type ProgramRef = {
+  id: string;
+  code: string;
+  title: string;
+  academic_unit_name: string;
+};
+
+export type AcademicYearRef = {
+  id: string;
+  label: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  is_current: boolean;
+};
+
+export type ProgramLevelRef = {
+  id: string;
+  code: string;
+  label: string;
+  sort_order: number;
+};
+
+export type EnrollmentAdminPublic = {
+  id: string;
+  student_profile_id: string;
+  status: string;
+  kind: string | null;
+  enrolled_on: string | null;
+  closed_on: string | null;
+  program: ProgramRef;
+  academic_year: AcademicYearRef;
+  program_level: ProgramLevelRef | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StudentProfileListItem = {
+  id: string;
+  person_id: string;
+  student_number: string;
+  status: string;
+  entry_date: string | null;
+  person_last_name: string;
+  person_first_name: string;
+  person_email: string | null;
+  enrollment_count: number;
+};
+
+export type StudentProfileListResponse = {
+  items: StudentProfileListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+};
+
+export type StudentProfilePublic = {
+  id: string;
+  person_id: string;
+  student_number: string;
+  status: string;
+  entry_date: string | null;
+  person: PersonPublic;
+  enrollments: EnrollmentAdminPublic[];
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type AcademicCatalog = {
+  programs: ProgramRef[];
+  academic_years: AcademicYearRef[];
+  program_levels: ProgramLevelRef[];
+};

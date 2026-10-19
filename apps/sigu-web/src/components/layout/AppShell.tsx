@@ -5,6 +5,7 @@ import { Button } from "../ui/Button";
 const nav = [
   { to: "/", label: "Tableau de bord", end: true },
   { to: "/persons", label: "Personnes" },
+  { to: "/student-dossiers", label: "Dossiers étudiants" },
   { to: "/users", label: "Comptes" },
   { to: "/roles", label: "Rôles" },
   { to: "/institution", label: "Institution" },

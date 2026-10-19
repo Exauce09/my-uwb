@@ -22,7 +22,7 @@ export function DashboardPage() {
         gérer les personnes et les comptes réellement exposés par le backend.
       </Alert>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           to="/persons"
           className="rounded-xl border border-[var(--sigu-line)] bg-white p-5 transition hover:border-[var(--sigu-navy)]"
@@ -30,6 +30,17 @@ export function DashboardPage() {
           <h3 className="font-semibold text-[var(--sigu-ink)]">Personnes</h3>
           <p className="mt-1 text-sm text-[var(--sigu-muted)]">
             Fiches d’identité (création, recherche, soft-delete, liaison compte).
+          </p>
+        </Link>
+        <Link
+          to="/student-dossiers"
+          className="rounded-xl border border-[var(--sigu-line)] bg-white p-5 transition hover:border-[var(--sigu-navy)]"
+        >
+          <h3 className="font-semibold text-[var(--sigu-ink)]">
+            Dossiers étudiants
+          </h3>
+          <p className="mt-1 text-sm text-[var(--sigu-muted)]">
+            Matricules et inscriptions annuelles (E3). Sans notes.
           </p>
         </Link>
         <Link

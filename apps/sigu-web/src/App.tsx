@@ -7,6 +7,7 @@ import { InstitutionPage } from "./pages/InstitutionPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PersonsPage } from "./pages/PersonsPage";
 import { RolesPage } from "./pages/RolesPage";
+import { StudentDossiersPage } from "./pages/StudentDossiersPage";
 import { UsersPage } from "./pages/UsersPage";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
               <Route path="persons" element={<PersonsPage />} />
+              <Route path="student-dossiers" element={<StudentDossiersPage />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="roles" element={<RolesPage />} />
               <Route path="institution" element={<InstitutionPage />} />
