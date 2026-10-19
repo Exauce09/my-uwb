@@ -5,6 +5,8 @@ import type {
   AcademicYearListResponse,
   AcademicYearPublic,
   EnrollmentAdminPublic,
+  ProgramLevelListResponse,
+  ProgramLevelPublic,
   ProgramListResponse,
   ProgramPublic,
   StudentProfileListResponse,
@@ -96,6 +98,35 @@ export async function updateAcademicYear(
   },
 ): Promise<AcademicYearPublic> {
   return apiRequest<AcademicYearPublic>(`/api/v1/academic/years/${id}`, {
+    method: "PATCH",
+    body,
+  });
+}
+
+export async function listProgramLevels(): Promise<ProgramLevelListResponse> {
+  return apiRequest<ProgramLevelListResponse>("/api/v1/academic/levels");
+}
+
+export async function createProgramLevel(body: {
+  code: string;
+  label: string;
+  sort_order?: number;
+}): Promise<ProgramLevelPublic> {
+  return apiRequest<ProgramLevelPublic>("/api/v1/academic/levels", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function updateProgramLevel(
+  id: string,
+  body: {
+    code?: string;
+    label?: string;
+    sort_order?: number;
+  },
+): Promise<ProgramLevelPublic> {
+  return apiRequest<ProgramLevelPublic>(`/api/v1/academic/levels/${id}`, {
     method: "PATCH",
     body,
   });

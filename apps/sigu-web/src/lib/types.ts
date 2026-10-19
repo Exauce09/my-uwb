@@ -170,3 +170,15 @@ export type AcademicYearListResponse = {
   page: number;
   page_size: number;
 };
+
+export type ProgramLevelPublic = {
+  id: string;
+  code: string;
+  label: string;
+  sort_order: number;
+};
+
+export type ProgramLevelListResponse = {
+  items: ProgramLevelPublic[];
+  total: number;
+};

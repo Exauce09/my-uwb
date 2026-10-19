@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   createAcademicYear,
   createProgram,
+  createProgramLevel,
   listAcademicUnits,
   listAcademicYears,
+  listProgramLevels,
   listPrograms,
   updateAcademicYear,
   updateProgram,
+  updateProgramLevel,
 } from "../api/academic";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
@@ -15,6 +18,7 @@ import { ApiError } from "../lib/api";
 import type {
   AcademicUnitRef,
   AcademicYearPublic,
+  ProgramLevelPublic,
   ProgramPublic,
 } from "../lib/types";
 
@@ -22,6 +26,7 @@ export function AcademicReferentialPage() {
   const [units, setUnits] = useState<AcademicUnitRef[]>([]);
   const [programs, setPrograms] = useState<ProgramPublic[]>([]);
   const [years, setYears] = useState<AcademicYearPublic[]>([]);
+  const [levels, setLevels] = useState<ProgramLevelPublic[]>([]);
   const [programTotal, setProgramTotal] = useState(0);
   const [programPage, setProgramPage] = useState(1);
   const [q, setQ] = useState("");
@@ -31,6 +36,9 @@ export function AcademicReferentialPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<ProgramPublic | null>(
+    null,
+  );
+  const [editingLevel, setEditingLevel] = useState<ProgramLevelPublic | null>(
     null,
   );
 
@@ -46,21 +54,28 @@ export function AcademicReferentialPage() {
     ends_on: "",
     is_current: false,
   });
+  const [levelForm, setLevelForm] = useState({
+    code: "",
+    label: "",
+    sort_order: "1",
+  });
   const pageSize = 10;
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [unitRows, prog, yr] = await Promise.all([
+      const [unitRows, prog, yr, lv] = await Promise.all([
         listAcademicUnits(),
         listPrograms({ page: programPage, pageSize, q }),
         listAcademicYears({ page: 1, pageSize: 50 }),
+        listProgramLevels(),
       ]);
       setUnits(unitRows);
       setPrograms(prog.items);
       setProgramTotal(prog.total);
       setYears(yr.items);
+      setLevels(lv.items);
       setProgramForm((f) =>
         f.academic_unit_id || !unitRows[0]
           ? f
@@ -70,6 +85,7 @@ export function AcademicReferentialPage() {
       setError(err instanceof ApiError ? err.message : "Chargement impossible.");
       setPrograms([]);
       setYears([]);
+      setLevels([]);
     } finally {
       setLoading(false);
     }
@@ -177,6 +193,59 @@ export function AcademicReferentialPage() {
     }
   }
 
+  async function onCreateLevel(event: FormEvent) {
+    event.preventDefault();
+    if (saving) return;
+    const sortOrder = Number.parseInt(levelForm.sort_order, 10);
+    if (
+      !levelForm.code.trim() ||
+      !levelForm.label.trim() ||
+      Number.isNaN(sortOrder)
+    ) {
+      setError("Code, libellé et ordre sont obligatoires.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const created = await createProgramLevel({
+        code: levelForm.code.trim(),
+        label: levelForm.label.trim(),
+        sort_order: sortOrder,
+      });
+      setSuccess(`Niveau ${created.code} créé.`);
+      setLevelForm({ code: "", label: "", sort_order: String(sortOrder + 1) });
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Création impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onSaveLevel(event: FormEvent) {
+    event.preventDefault();
+    if (!editingLevel || saving) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await updateProgramLevel(editingLevel.id, {
+        code: editingLevel.code.trim(),
+        label: editingLevel.label.trim(),
+        sort_order: editingLevel.sort_order,
+      });
+      setEditingLevel(updated);
+      setSuccess("Niveau mis à jour.");
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const programPages = Math.max(1, Math.ceil(programTotal / pageSize));
 
   return (
@@ -186,14 +255,13 @@ export function AcademicReferentialPage() {
           Référentiel académique
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-[var(--sigu-muted)]">
-          Programmes et années utilisés pour les inscriptions. Le catalogue
-          initial (7 unités / cursus) est{" "}
+          Programmes, années et niveaux (D-021 / fiche 13 §7) pour les
+          inscriptions. Catalogue initial (7 unités){" "}
           <strong className="font-semibold text-[var(--sigu-ink)]">
-            provisoire / issu du seed de test
+            provisoire / seed
           </strong>{" "}
-          — visa UWB formel encore attendu. Les niveaux d’études sont consultables
-          via le catalogue d’inscription ; leur édition n’est pas ouverte ici.
-          Notes et délibérations hors périmètre.
+          — visa UWB formel encore attendu. Pas de cohortes (Q33=non), pas de
+          notes (D-015).
         </p>
       </div>
 
@@ -486,6 +554,133 @@ export function AcademicReferentialPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="rounded-xl border border-[var(--sigu-line)] bg-white p-5">
+        <h3 className="font-semibold text-[var(--sigu-ink)]">
+          Niveaux d’études
+        </h3>
+        <p className="mt-1 text-sm text-[var(--sigu-muted)]">
+          Liste intérimaire D-021 (promotions du formulaire public mappées en
+          niveaux). Pas de table cohortes.
+        </p>
+        <form
+          onSubmit={onCreateLevel}
+          className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <Field
+            label="Code"
+            value={levelForm.code}
+            onChange={(e) =>
+              setLevelForm((f) => ({ ...f, code: e.target.value }))
+            }
+            placeholder="ex. L1_LMD"
+            required
+          />
+          <Field
+            label="Libellé"
+            value={levelForm.label}
+            onChange={(e) =>
+              setLevelForm((f) => ({ ...f, label: e.target.value }))
+            }
+            placeholder="ex. L1 LMD"
+            required
+          />
+          <Field
+            label="Ordre"
+            type="number"
+            value={levelForm.sort_order}
+            onChange={(e) =>
+              setLevelForm((f) => ({ ...f, sort_order: e.target.value }))
+            }
+            required
+          />
+          <div className="flex items-end">
+            <Button type="submit" disabled={saving}>
+              Créer le niveau
+            </Button>
+          </div>
+        </form>
+
+        {levels.length === 0 && !loading ? (
+          <p className="mt-4 text-sm text-[var(--sigu-muted)]">
+            Aucun niveau enregistré.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-[var(--sigu-line)]">
+            {levels.map((lv) => (
+              <li
+                key={lv.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3"
+              >
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => setEditingLevel(lv)}
+                >
+                  <p className="text-sm font-medium text-[var(--sigu-ink)]">
+                    {lv.code} — {lv.label}
+                  </p>
+                  <p className="text-xs text-[var(--sigu-muted)]">
+                    ordre {lv.sort_order}
+                  </p>
+                </button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setEditingLevel(lv)}
+                >
+                  Modifier
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {editingLevel ? (
+          <form
+            onSubmit={onSaveLevel}
+            className="mt-4 grid gap-3 border-t border-[var(--sigu-line)] pt-4 sm:grid-cols-3"
+          >
+            <Field
+              label="Code"
+              value={editingLevel.code}
+              onChange={(e) =>
+                setEditingLevel({ ...editingLevel, code: e.target.value })
+              }
+            />
+            <Field
+              label="Libellé"
+              value={editingLevel.label}
+              onChange={(e) =>
+                setEditingLevel({ ...editingLevel, label: e.target.value })
+              }
+            />
+            <Field
+              label="Ordre"
+              type="number"
+              value={String(editingLevel.sort_order)}
+              onChange={(e) =>
+                setEditingLevel({
+                  ...editingLevel,
+                  sort_order: Number.parseInt(e.target.value, 10) || 0,
+                })
+              }
+            />
+            <div className="flex gap-2 sm:col-span-3">
+              <Button type="submit" disabled={saving}>
+                Enregistrer le niveau
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditingLevel(null)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </form>
+        ) : null}
       </section>
     </div>
   );
