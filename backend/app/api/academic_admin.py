@@ -35,7 +35,11 @@ from app.schemas.academic_admin import (
     EnrollmentCreate,
     EnrollmentUpdate,
     ProgramCreate,
+    ProgramLevelCreate,
+    ProgramLevelListResponse,
+    ProgramLevelPublic,
     ProgramLevelRef,
+    ProgramLevelUpdate,
     ProgramListResponse,
     ProgramPublic,
     ProgramRef,
@@ -241,6 +245,16 @@ def _get_year_or_404(db: Session, year_id: UUID) -> AcademicYear:
             detail="Année académique introuvable.",
         )
     return year
+
+
+def _get_level_or_404(db: Session, level_id: UUID) -> ProgramLevel:
+    level = db.query(ProgramLevel).filter(ProgramLevel.id == level_id).first()
+    if level is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Niveau d’études introuvable.",
+        )
+    return level
 
 
 def _unset_other_current_years(db: Session, keep_id: UUID | None = None) -> None:
@@ -495,6 +509,84 @@ def update_academic_year(
             detail="Libellé d’année académique déjà utilisé.",
         ) from None
     return AcademicYearPublic.model_validate(_get_year_or_404(db, year.id))
+
+
+@router.get("/academic/levels", response_model=ProgramLevelListResponse)
+def list_program_levels(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramLevelListResponse:
+    rows = (
+        db.query(ProgramLevel)
+        .order_by(ProgramLevel.sort_order.asc(), ProgramLevel.code.asc())
+        .all()
+    )
+    return ProgramLevelListResponse(
+        items=[ProgramLevelPublic.model_validate(lv) for lv in rows],
+        total=len(rows),
+    )
+
+
+@router.get("/academic/levels/{level_id}", response_model=ProgramLevelPublic)
+def get_program_level(
+    level_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramLevelPublic:
+    return ProgramLevelPublic.model_validate(_get_level_or_404(db, level_id))
+
+
+@router.post(
+    "/academic/levels",
+    response_model=ProgramLevelPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_program_level(
+    body: ProgramLevelCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramLevelPublic:
+    level = ProgramLevel(
+        code=body.code.strip(),
+        label=body.label.strip(),
+        sort_order=body.sort_order,
+    )
+    db.add(level)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Code niveau déjà utilisé.",
+        ) from None
+    return ProgramLevelPublic.model_validate(_get_level_or_404(db, level.id))
+
+
+@router.patch("/academic/levels/{level_id}", response_model=ProgramLevelPublic)
+def update_program_level(
+    level_id: UUID,
+    body: ProgramLevelUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramLevelPublic:
+    level = _get_level_or_404(db, level_id)
+    data = body.model_dump(exclude_unset=True)
+    if "code" in data and data["code"] is not None:
+        level.code = data["code"].strip()
+    if "label" in data and data["label"] is not None:
+        level.label = data["label"].strip()
+    if "sort_order" in data and data["sort_order"] is not None:
+        level.sort_order = data["sort_order"]
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Code niveau déjà utilisé.",
+        ) from None
+    return ProgramLevelPublic.model_validate(_get_level_or_404(db, level.id))
 
 
 @router.get("/student-profiles", response_model=StudentProfileListResponse)

@@ -202,6 +202,60 @@ def test_missing_unit_and_program(client, admin_user):
     )
 
 
+def test_list_create_update_program_level(client, admin_user):
+    token = _login(client, "admin@example.com", "AdminPass1!")
+    created = client.post(
+        "/api/v1/academic/levels",
+        headers=_auth(token),
+        json={"code": "L1_LMD", "label": "L1 LMD", "sort_order": 1},
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["code"] == "L1_LMD"
+    assert body["sort_order"] == 1
+
+    listed = client.get("/api/v1/academic/levels", headers=_auth(token))
+    assert listed.status_code == 200
+    assert listed.json()["total"] >= 1
+    assert any(x["code"] == "L1_LMD" for x in listed.json()["items"])
+
+    patched = client.patch(
+        f"/api/v1/academic/levels/{body['id']}",
+        headers=_auth(token),
+        json={"label": "L1 LMD (intérimaire)"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["label"] == "L1 LMD (intérimaire)"
+
+    dup = client.post(
+        "/api/v1/academic/levels",
+        headers=_auth(token),
+        json={"code": "L1_LMD", "label": "Autre", "sort_order": 2},
+    )
+    assert dup.status_code == 409
+
+    assert (
+        client.get(
+            "/api/v1/academic/levels/00000000-0000-0000-0000-000000000099",
+            headers=_auth(token),
+        ).status_code
+        == 404
+    )
+
+
+def test_level_rbac(client, admin_user, student_user):
+    assert client.get("/api/v1/academic/levels").status_code == 401
+    student_tok = _login(client, "student@example.com", "StudentPass1!")
+    assert (
+        client.post(
+            "/api/v1/academic/levels",
+            headers=_auth(student_tok),
+            json={"code": "X", "label": "Y", "sort_order": 1},
+        ).status_code
+        == 403
+    )
+
+
 def test_enrollment_still_works_after_program_update(
     client, admin_user, unit, db_session: Session, seed_roles
 ):
@@ -220,6 +274,11 @@ def test_enrollment_still_works_after_program_update(
         headers=_auth(token),
         json={"label": "2026-2027", "is_current": True},
     ).json()
+    level = client.post(
+        "/api/v1/academic/levels",
+        headers=_auth(token),
+        json={"code": "L1_LMD", "label": "L1 LMD", "sort_order": 1},
+    ).json()
     person = Person(last_name="Keep", first_name="Enr", email="keep@example.com")
     db_session.add(person)
     db_session.commit()
@@ -236,6 +295,7 @@ def test_enrollment_still_works_after_program_update(
             "student_profile_id": profile["id"],
             "program_id": program["id"],
             "academic_year_id": year["id"],
+            "program_level_id": level["id"],
             "status": "active",
         },
     )
@@ -245,6 +305,11 @@ def test_enrollment_still_works_after_program_update(
         headers=_auth(token),
         json={"title": "Programme renommé"},
     )
+    client.patch(
+        f"/api/v1/academic/levels/{level['id']}",
+        headers=_auth(token),
+        json={"label": "L1 LMD mis à jour"},
+    )
     detail = client.get(
         f"/api/v1/enrollments/{enr.json()['id']}",
         headers=_auth(token),
@@ -252,3 +317,4 @@ def test_enrollment_still_works_after_program_update(
     assert detail.status_code == 200
     assert detail.json()["program"]["title"] == "Programme renommé"
     assert detail.json()["program"]["code"] == "KEEP_ME"
+    assert detail.json()["program_level"]["label"] == "L1 LMD mis à jour"
