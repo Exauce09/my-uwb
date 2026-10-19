@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api import auth, health, persons, users
+from app.api import academic_admin, auth, health, persons, users
 from app.config import get_settings
 
 settings = get_settings()
@@ -13,8 +13,8 @@ app = FastAPI(
     title='SIGU-UWB API',
     description=(
         'API du Systeme Integre de Gestion Universitaire (Universite William Booth). '
-        'Socle : sante, authentification, roles, personnes (Module 2). '
-        'Les modules metier (notes, finances, etc.) ne sont pas inclus.'
+        'Socle : sante, authentification, roles, personnes, dossiers etudiants E3. '
+        'Notes et deliberations hors perimetre tant que D-015 n est pas valide.'
     ),
     version=__version__,
     docs_url='/docs' if not settings.is_production else None,
@@ -33,3 +33,4 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix='/api/v1')
 app.include_router(users.router, prefix='/api/v1')
 app.include_router(persons.router, prefix='/api/v1')
+app.include_router(academic_admin.router, prefix='/api/v1')
