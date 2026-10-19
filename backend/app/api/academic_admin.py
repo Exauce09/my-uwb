@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import require_roles
 from app.database import get_db
 from app.models.academic import (
+    AcademicUnit,
     AcademicYear,
     Enrollment,
     EnrollmentStatus,
@@ -23,13 +24,22 @@ from app.models.person import Person
 from app.models.role import RoleName
 from app.models.user import User
 from app.schemas.academic_admin import (
+    AcademicUnitRef,
+    AcademicYearCreate,
+    AcademicYearListResponse,
+    AcademicYearPublic,
     AcademicYearRef,
+    AcademicYearUpdate,
     CatalogLists,
     EnrollmentAdminPublic,
     EnrollmentCreate,
     EnrollmentUpdate,
+    ProgramCreate,
     ProgramLevelRef,
+    ProgramListResponse,
+    ProgramPublic,
     ProgramRef,
+    ProgramUpdate,
     StudentProfileCreate,
     StudentProfileListItem,
     StudentProfileListResponse,
@@ -193,6 +203,298 @@ def academic_catalog(
         academic_years=[_year_ref(y) for y in years],
         program_levels=[ProgramLevelRef.model_validate(lv) for lv in levels],
     )
+
+
+def _program_public(program: Program) -> ProgramPublic:
+    return ProgramPublic(
+        id=program.id,
+        code=program.code,
+        title=program.title,
+        cycle=program.cycle,
+        academic_unit_id=program.academic_unit_id,
+        academic_unit_code=program.academic_unit.code,
+        academic_unit_name=program.academic_unit.name,
+        deleted_at=program.deleted_at,
+    )
+
+
+def _get_program_or_404(db: Session, program_id: UUID) -> Program:
+    program = (
+        db.query(Program)
+        .options(joinedload(Program.academic_unit))
+        .filter(Program.id == program_id, Program.deleted_at.is_(None))
+        .first()
+    )
+    if program is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Programme introuvable.",
+        )
+    return program
+
+
+def _get_year_or_404(db: Session, year_id: UUID) -> AcademicYear:
+    year = db.query(AcademicYear).filter(AcademicYear.id == year_id).first()
+    if year is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Année académique introuvable.",
+        )
+    return year
+
+
+def _unset_other_current_years(db: Session, keep_id: UUID | None = None) -> None:
+    q = db.query(AcademicYear).filter(AcademicYear.is_current.is_(True))
+    if keep_id is not None:
+        q = q.filter(AcademicYear.id != keep_id)
+    for row in q.all():
+        row.is_current = False
+
+
+@router.get("/academic/units", response_model=list[AcademicUnitRef])
+def list_academic_units(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> list[AcademicUnitRef]:
+    rows = (
+        db.query(AcademicUnit)
+        .filter(AcademicUnit.deleted_at.is_(None))
+        .order_by(AcademicUnit.code.asc())
+        .all()
+    )
+    return [AcademicUnitRef.model_validate(u) for u in rows]
+
+
+@router.get("/academic/programs", response_model=ProgramListResponse)
+def list_programs(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    q: str | None = Query(None, max_length=200),
+) -> ProgramListResponse:
+    filters = [Program.deleted_at.is_(None)]
+    if q and q.strip():
+        term = f"%{q.strip().lower()}%"
+        filters.append(
+            or_(
+                func.lower(Program.code).like(term),
+                func.lower(Program.title).like(term),
+            )
+        )
+    total = db.query(func.count(Program.id)).filter(*filters).scalar() or 0
+    rows = (
+        db.query(Program)
+        .options(joinedload(Program.academic_unit))
+        .filter(*filters)
+        .order_by(Program.code.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return ProgramListResponse(
+        items=[_program_public(p) for p in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/academic/programs/{program_id}", response_model=ProgramPublic)
+def get_program(
+    program_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramPublic:
+    return _program_public(_get_program_or_404(db, program_id))
+
+
+@router.post(
+    "/academic/programs",
+    response_model=ProgramPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_program(
+    body: ProgramCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramPublic:
+    unit = (
+        db.query(AcademicUnit)
+        .filter(
+            AcademicUnit.id == body.academic_unit_id,
+            AcademicUnit.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if unit is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unité académique introuvable.",
+        )
+    program = Program(
+        academic_unit_id=unit.id,
+        code=body.code.strip(),
+        title=body.title.strip(),
+        cycle=body.cycle.strip() if body.cycle else None,
+    )
+    db.add(program)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Code programme déjà utilisé.",
+        ) from None
+    return _program_public(_get_program_or_404(db, program.id))
+
+
+@router.patch("/academic/programs/{program_id}", response_model=ProgramPublic)
+def update_program(
+    program_id: UUID,
+    body: ProgramUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramPublic:
+    program = _get_program_or_404(db, program_id)
+    data = body.model_dump(exclude_unset=True)
+    if "academic_unit_id" in data and data["academic_unit_id"] is not None:
+        unit = (
+            db.query(AcademicUnit)
+            .filter(
+                AcademicUnit.id == data["academic_unit_id"],
+                AcademicUnit.deleted_at.is_(None),
+            )
+            .first()
+        )
+        if unit is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Unité académique introuvable.",
+            )
+        program.academic_unit_id = unit.id
+    if "code" in data and data["code"] is not None:
+        program.code = data["code"].strip()
+    if "title" in data and data["title"] is not None:
+        program.title = data["title"].strip()
+    if "cycle" in data:
+        raw = data["cycle"]
+        program.cycle = raw.strip() if raw else None
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Code programme déjà utilisé.",
+        ) from None
+    return _program_public(_get_program_or_404(db, program.id))
+
+
+@router.get("/academic/years", response_model=AcademicYearListResponse)
+def list_academic_years(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+) -> AcademicYearListResponse:
+    total = db.query(func.count(AcademicYear.id)).scalar() or 0
+    rows = (
+        db.query(AcademicYear)
+        .order_by(AcademicYear.label.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return AcademicYearListResponse(
+        items=[AcademicYearPublic.model_validate(y) for y in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/academic/years/{year_id}", response_model=AcademicYearPublic)
+def get_academic_year(
+    year_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> AcademicYearPublic:
+    return AcademicYearPublic.model_validate(_get_year_or_404(db, year_id))
+
+
+@router.post(
+    "/academic/years",
+    response_model=AcademicYearPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_academic_year(
+    body: AcademicYearCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> AcademicYearPublic:
+    if body.starts_on and body.ends_on and body.ends_on < body.starts_on:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La date de fin doit être postérieure ou égale à la date de début.",
+        )
+    year = AcademicYear(
+        label=body.label.strip(),
+        starts_on=body.starts_on,
+        ends_on=body.ends_on,
+        is_current=body.is_current,
+    )
+    db.add(year)
+    try:
+        db.flush()
+        if body.is_current:
+            _unset_other_current_years(db, keep_id=year.id)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Libellé d’année académique déjà utilisé.",
+        ) from None
+    return AcademicYearPublic.model_validate(_get_year_or_404(db, year.id))
+
+
+@router.patch("/academic/years/{year_id}", response_model=AcademicYearPublic)
+def update_academic_year(
+    year_id: UUID,
+    body: AcademicYearUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> AcademicYearPublic:
+    year = _get_year_or_404(db, year_id)
+    data = body.model_dump(exclude_unset=True)
+    if "label" in data and data["label"] is not None:
+        year.label = data["label"].strip()
+    if "starts_on" in data:
+        year.starts_on = data["starts_on"]
+    if "ends_on" in data:
+        year.ends_on = data["ends_on"]
+    starts = year.starts_on
+    ends = year.ends_on
+    if starts and ends and ends < starts:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La date de fin doit être postérieure ou égale à la date de début.",
+        )
+    if "is_current" in data and data["is_current"] is not None:
+        year.is_current = data["is_current"]
+        if year.is_current:
+            _unset_other_current_years(db, keep_id=year.id)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Libellé d’année académique déjà utilisé.",
+        ) from None
+    return AcademicYearPublic.model_validate(_get_year_or_404(db, year.id))
 
 
 @router.get("/student-profiles", response_model=StudentProfileListResponse)
