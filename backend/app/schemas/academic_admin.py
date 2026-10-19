@@ -137,6 +137,8 @@ class EnrollmentUpdate(BaseModel):
         | None
     ) = None
     kind: str | None = Field(default=None, max_length=32)
+    program_id: UUID | None = None
+    academic_year_id: UUID | None = None
     program_level_id: UUID | None = None
     enrolled_on: date | None = None
     closed_on: date | None = None

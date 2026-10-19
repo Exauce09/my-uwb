@@ -234,6 +234,13 @@ def test_list_create_update_program_level(client, admin_user):
     )
     assert dup.status_code == 409
 
+    invalid = client.post(
+        "/api/v1/academic/levels",
+        headers=_auth(token),
+        json={"code": "FAKE_LVL", "label": "Inventé", "sort_order": 99},
+    )
+    assert invalid.status_code == 422
+
     assert (
         client.get(
             "/api/v1/academic/levels/00000000-0000-0000-0000-000000000099",
@@ -241,6 +248,103 @@ def test_list_create_update_program_level(client, admin_user):
         ).status_code
         == 404
     )
+
+
+def test_soft_delete_enrollment_allows_recreate(
+    client, admin_user, unit, db_session: Session
+):
+    token = _login(client, "admin@example.com", "AdminPass1!")
+    program = client.post(
+        "/api/v1/academic/programs",
+        headers=_auth(token),
+        json={
+            "academic_unit_id": str(unit.id),
+            "code": "SOFT_P",
+            "title": "Prog soft",
+        },
+    ).json()
+    year = client.post(
+        "/api/v1/academic/years",
+        headers=_auth(token),
+        json={"label": "2026-2027", "is_current": True},
+    ).json()
+    person = Person(last_name="Soft", first_name="Del", email="soft@example.com")
+    db_session.add(person)
+    db_session.commit()
+    db_session.refresh(person)
+    profile = client.post(
+        "/api/v1/student-profiles",
+        headers=_auth(token),
+        json={"person_id": str(person.id), "student_number": "SOFT-1"},
+    ).json()
+    payload = {
+        "student_profile_id": profile["id"],
+        "program_id": program["id"],
+        "academic_year_id": year["id"],
+        "status": "active",
+        "kind": "initial",
+    }
+    enr = client.post("/api/v1/enrollments", headers=_auth(token), json=payload)
+    assert enr.status_code == 201
+    deleted = client.delete(
+        f"/api/v1/enrollments/{enr.json()['id']}",
+        headers=_auth(token),
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["id"] == enr.json()["id"]
+    recreated = client.post(
+        "/api/v1/enrollments", headers=_auth(token), json=payload
+    )
+    assert recreated.status_code == 201
+
+
+def test_two_programs_same_year_allowed(client, admin_user, unit, db_session: Session):
+    """D-022 option A : deux programmes la même année = OK."""
+    token = _login(client, "admin@example.com", "AdminPass1!")
+    p1 = client.post(
+        "/api/v1/academic/programs",
+        headers=_auth(token),
+        json={
+            "academic_unit_id": str(unit.id),
+            "code": "P_A",
+            "title": "Prog A",
+        },
+    ).json()
+    p2 = client.post(
+        "/api/v1/academic/programs",
+        headers=_auth(token),
+        json={
+            "academic_unit_id": str(unit.id),
+            "code": "P_B",
+            "title": "Prog B",
+        },
+    ).json()
+    year = client.post(
+        "/api/v1/academic/years",
+        headers=_auth(token),
+        json={"label": "2026-2027", "is_current": True},
+    ).json()
+    person = Person(last_name="Dual", first_name="Prog", email="dual@example.com")
+    db_session.add(person)
+    db_session.commit()
+    db_session.refresh(person)
+    profile = client.post(
+        "/api/v1/student-profiles",
+        headers=_auth(token),
+        json={"person_id": str(person.id), "student_number": "DUAL-1"},
+    ).json()
+    for prog in (p1, p2):
+        r = client.post(
+            "/api/v1/enrollments",
+            headers=_auth(token),
+            json={
+                "student_profile_id": profile["id"],
+                "program_id": prog["id"],
+                "academic_year_id": year["id"],
+                "status": "active",
+            },
+        )
+        assert r.status_code == 201, r.text
 
 
 def test_level_rbac(client, admin_user, student_user):

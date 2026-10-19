@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,6 +10,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
+from app.academic_catalog_defs import D021_LEVEL_CODES, ENROLLMENT_KINDS
 from app.api.deps import require_roles
 from app.database import get_db
 from app.models.academic import (
@@ -406,6 +408,34 @@ def update_program(
     return _program_public(_get_program_or_404(db, program.id))
 
 
+@router.delete("/academic/programs/{program_id}", response_model=ProgramPublic)
+def soft_delete_program(
+    program_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> ProgramPublic:
+    program = _get_program_or_404(db, program_id)
+    active_enr = (
+        db.query(func.count(Enrollment.id))
+        .filter(
+            Enrollment.program_id == program.id,
+            Enrollment.deleted_at.is_(None),
+        )
+        .scalar()
+        or 0
+    )
+    if active_enr:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible de supprimer un programme encore référencé par des inscriptions actives.",
+        )
+    if program.deleted_at is None:
+        program.deleted_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(program)
+    return _program_public(program)
+
+
 @router.get("/academic/years", response_model=AcademicYearListResponse)
 def list_academic_years(
     db: Session = Depends(get_db),
@@ -546,8 +576,17 @@ def create_program_level(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles(_ADMIN)),
 ) -> ProgramLevelPublic:
+    code = body.code.strip()
+    if code not in D021_LEVEL_CODES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Code niveau hors nomenclature D-021 intérimaire "
+                f"(autorisés : {', '.join(sorted(D021_LEVEL_CODES))})."
+            ),
+        )
     level = ProgramLevel(
-        code=body.code.strip(),
+        code=code,
         label=body.label.strip(),
         sort_order=body.sort_order,
     )
@@ -573,7 +612,16 @@ def update_program_level(
     level = _get_level_or_404(db, level_id)
     data = body.model_dump(exclude_unset=True)
     if "code" in data and data["code"] is not None:
-        level.code = data["code"].strip()
+        code = data["code"].strip()
+        if code not in D021_LEVEL_CODES:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Code niveau hors nomenclature D-021 intérimaire "
+                    f"(autorisés : {', '.join(sorted(D021_LEVEL_CODES))})."
+                ),
+            )
+        level.code = code
     if "label" in data and data["label"] is not None:
         level.label = data["label"].strip()
     if "sort_order" in data and data["sort_order"] is not None:
@@ -739,6 +787,27 @@ def update_student_profile(
     return _profile_public(_get_profile_or_404(db, profile.id))
 
 
+@router.delete(
+    "/student-profiles/{profile_id}",
+    response_model=StudentProfilePublic,
+)
+def soft_delete_student_profile(
+    profile_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> StudentProfilePublic:
+    profile = _get_profile_or_404(db, profile_id)
+    if profile.deleted_at is None:
+        now = datetime.now(timezone.utc)
+        profile.deleted_at = now
+        for enr in profile.enrollments:
+            if enr.deleted_at is None:
+                enr.deleted_at = now
+        db.commit()
+        db.refresh(profile)
+    return _profile_public(profile)
+
+
 @router.post(
     "/enrollments",
     response_model=EnrollmentAdminPublic,
@@ -804,13 +873,20 @@ def create_enrollment(
             detail="Statut d’inscription invalide.",
         )
 
+    kind = body.kind.strip() if body.kind else None
+    if kind and kind not in ENROLLMENT_KINDS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Type d’inscription invalide (initial | reenrollment).",
+        )
+
     enrollment = Enrollment(
         student_profile_id=profile.id,
         program_id=program.id,
         academic_year_id=year.id,
         program_level_id=level.id if level else None,
         status=body.status,
-        kind=body.kind.strip() if body.kind else None,
+        kind=kind,
         enrolled_on=body.enrolled_on,
     )
     db.add(enrollment)
@@ -856,7 +932,37 @@ def update_enrollment(
         row.status = data["status"]
     if "kind" in data:
         raw = data["kind"]
-        row.kind = raw.strip() if raw else None
+        kind = raw.strip() if raw else None
+        if kind and kind not in ENROLLMENT_KINDS:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Type d’inscription invalide (initial | reenrollment).",
+            )
+        row.kind = kind
+    if "program_id" in data and data["program_id"] is not None:
+        program = (
+            db.query(Program)
+            .filter(Program.id == data["program_id"], Program.deleted_at.is_(None))
+            .first()
+        )
+        if program is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Programme introuvable.",
+            )
+        row.program_id = program.id
+    if "academic_year_id" in data and data["academic_year_id"] is not None:
+        year = (
+            db.query(AcademicYear)
+            .filter(AcademicYear.id == data["academic_year_id"])
+            .first()
+        )
+        if year is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Année académique introuvable.",
+            )
+        row.academic_year_id = year.id
     if "program_level_id" in data:
         level_id = data["program_level_id"]
         if level_id is None:
@@ -877,5 +983,32 @@ def update_enrollment(
         row.enrolled_on = data["enrolled_on"]
     if "closed_on" in data:
         row.closed_on = data["closed_on"]
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Une inscription existe déjà pour cet étudiant, "
+                "ce programme et cette année (unicité A)."
+            ),
+        ) from None
     return _enrollment_public(_get_enrollment_or_404(db, row.id))
+
+
+@router.delete(
+    "/enrollments/{enrollment_id}",
+    response_model=EnrollmentAdminPublic,
+)
+def soft_delete_enrollment(
+    enrollment_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(_ADMIN)),
+) -> EnrollmentAdminPublic:
+    row = _get_enrollment_or_404(db, enrollment_id)
+    if row.deleted_at is None:
+        row.deleted_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(row)
+    return _enrollment_public(row)

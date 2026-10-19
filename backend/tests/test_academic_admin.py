@@ -291,11 +291,11 @@ def test_patch_profile_and_enrollment(client, admin_user, catalog, person_a):
     updated = client.patch(
         f"/api/v1/enrollments/{enr['id']}",
         headers=_auth(token),
-        json={"status": "withdrawn", "kind": "correction"},
+        json={"status": "withdrawn", "kind": "reenrollment"},
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["status"] == "withdrawn"
-    assert updated.json()["kind"] == "correction"
+    assert updated.json()["kind"] == "reenrollment"
 
     # Persistance après relecture (équivalent refresh page)
     again = client.get(

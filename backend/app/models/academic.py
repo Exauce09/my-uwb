@@ -12,9 +12,10 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     String,
-    UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -51,13 +52,22 @@ class AcademicUnit(Base):
 
 class Program(Base):
     __tablename__ = "programs"
+    __table_args__ = (
+        Index(
+            "uq_programs_code_active",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     academic_unit_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("academic_units.id", ondelete="RESTRICT"),
         nullable=False,
     )
-    code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     cycle: Mapped[str | None] = mapped_column(String(64), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(
@@ -93,15 +103,30 @@ class ProgramLevel(Base):
 
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
+    __table_args__ = (
+        Index(
+            "uq_student_profiles_person_active",
+            "person_id",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index(
+            "uq_student_profiles_number_active",
+            "student_number",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     person_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("persons.id", ondelete="RESTRICT"),
-        unique=True,
         nullable=False,
     )
     # D-029 : unicité globale ; format libre (pas de CHECK masque).
-    student_number: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    student_number: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     entry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(
@@ -122,15 +147,18 @@ class StudentProfile(Base):
 
 
 class Enrollment(Base):
-    """Inscription académique annuelle — unicité D-022 option A."""
+    """Inscription académique annuelle — unicité D-022 option A (actifs seulement)."""
 
     __tablename__ = "enrollments"
     __table_args__ = (
-        UniqueConstraint(
+        Index(
+            "uq_enrollments_student_program_year_active",
             "student_profile_id",
             "program_id",
             "academic_year_id",
-            name="uq_enrollments_student_program_year",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
         ),
     )
 
