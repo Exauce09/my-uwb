@@ -3,6 +3,7 @@ import {
   createAcademicYear,
   createProgram,
   createProgramLevel,
+  deleteProgram,
   listAcademicUnits,
   listAcademicYears,
   listProgramLevels,
@@ -154,12 +155,32 @@ export function AcademicReferentialPage() {
         title: selectedProgram.title.trim(),
         cycle: selectedProgram.cycle,
         code: selectedProgram.code.trim(),
+        academic_unit_id: selectedProgram.academic_unit_id,
       });
       setSelectedProgram(updated);
       setSuccess("Programme mis à jour.");
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Mise à jour impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onArchiveProgram() {
+    if (!selectedProgram || saving) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteProgram(selectedProgram.id);
+      setSuccess(
+        `Programme ${selectedProgram.code} archivé (hors catalogue d’inscription).`,
+      );
+      setSelectedProgram(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Archivage impossible.");
     } finally {
       setSaving(false);
     }
@@ -518,15 +539,42 @@ export function AcademicReferentialPage() {
                 })
               }
             />
-            <p className="self-end text-sm text-[var(--sigu-muted)]">
-              Unité : {selectedProgram.academic_unit_name} (
-              {selectedProgram.academic_unit_code})
-            </p>
-            <div className="sm:col-span-2">
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium text-[var(--sigu-ink)]">Unité</span>
+              <select
+                className="w-full rounded-sm border border-[var(--sigu-line)] bg-white px-3 py-2 text-sm"
+                value={selectedProgram.academic_unit_id}
+                onChange={(e) =>
+                  setSelectedProgram({
+                    ...selectedProgram,
+                    academic_unit_id: e.target.value,
+                  })
+                }
+              >
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.code} — {u.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2">
               <Button type="submit" disabled={saving}>
                 Enregistrer
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={saving}
+                onClick={() => void onArchiveProgram()}
+              >
+                Archiver le programme
+              </Button>
             </div>
+            <p className="text-xs text-[var(--sigu-muted)] sm:col-span-2">
+              L’archivage est refusé s’il reste des inscriptions actives. Le
+              programme disparaît alors du catalogue de création.
+            </p>
           </form>
         </section>
       ) : null}
