@@ -8,9 +8,10 @@
 
 - Authentification étudiants / enseignants : en place (E1).
 - Modèles `User`, `Role`, `Person` (+ liaison `users.person_id`) : en place (E1 / E2).
-- Endpoint existant : `GET /api/v1/auth/me/dossier` — identité réelle ; section académique explicitement `not_provisioned` (aucun inventaire fictif).
-- Portail étudiant / enseignant publié.
-- **Aucune** table académique métier (inscriptions, programmes, notes) n’est créée tant que les décisions ci-dessous ne sont pas tranchées.
+- Tables E3 V1 : unités, programmes, années, niveaux, profils, inscriptions (sans notes).
+- Admin : référentiel + dossiers ; portail : `GET /api/v1/auth/me/dossier` avec inscriptions.
+- Décisions E3 V1 : **intérimaires** dans `docs/13` / `docs/09` — visa rectorat formel encore attendu.
+- D-015 (notes / délibérations) : toujours hors périmètre.
 
 **Documents introuvables dans le dépôt :** aucun PV, mail ou compte rendu officiel UWB de validation académique ; aucun catalogue figé des programmes / matricules / barèmes. Les questions du site public (`05`) et des données (`10`) restent ouvertes.
 

@@ -43,6 +43,10 @@ $env:SIGU_BOOTSTRAP_EMAIL="admin@example.com"
 $env:SIGU_BOOTSTRAP_PASSWORD="..."   # fort, local uniquement
 python -m app.scripts.create_admin
 Remove-Item Env:SIGU_BOOTSTRAP_PASSWORD
+# Référentiel E3 (7 unités / 8 niveaux / année 2026-2027) — idempotent
+python -m app.scripts.seed_academic_e3_catalog
+# Optionnel — dossier étudiant de test (TEST-E3-001)
+# python -m app.scripts.provision_test_student_dossier
 uvicorn app.main:app --reload --port 8001
 
 # Frontend
