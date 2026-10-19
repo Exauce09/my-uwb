@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import { AppShell } from "./components/layout/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AcademicReferentialPage } from "./pages/AcademicReferentialPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { InstitutionPage } from "./pages/InstitutionPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -21,6 +22,10 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="persons" element={<PersonsPage />} />
               <Route path="student-dossiers" element={<StudentDossiersPage />} />
+              <Route
+                path="academic-referential"
+                element={<AcademicReferentialPage />}
+              />
               <Route path="users" element={<UsersPage />} />
               <Route path="roles" element={<RolesPage />} />
               <Route path="institution" element={<InstitutionPage />} />

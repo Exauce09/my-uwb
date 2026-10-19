@@ -44,6 +44,18 @@ export function DashboardPage() {
           </p>
         </Link>
         <Link
+          to="/academic-referential"
+          className="rounded-xl border border-[var(--sigu-line)] bg-white p-5 transition hover:border-[var(--sigu-navy)]"
+        >
+          <h3 className="font-semibold text-[var(--sigu-ink)]">
+            Référentiel académique
+          </h3>
+          <p className="mt-1 text-sm text-[var(--sigu-muted)]">
+            Programmes et années (données provisoires / seed tant que visa UWB
+            absent).
+          </p>
+        </Link>
+        <Link
           to="/users"
           className="rounded-xl border border-[var(--sigu-line)] bg-white p-5 transition hover:border-[var(--sigu-navy)]"
         >

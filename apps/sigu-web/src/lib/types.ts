@@ -130,3 +130,43 @@ export type AcademicCatalog = {
   academic_years: AcademicYearRef[];
   program_levels: ProgramLevelRef[];
 };
+
+export type AcademicUnitRef = {
+  id: string;
+  code: string;
+  name: string;
+  kind: string;
+};
+
+export type ProgramPublic = {
+  id: string;
+  code: string;
+  title: string;
+  cycle: string | null;
+  academic_unit_id: string;
+  academic_unit_code: string;
+  academic_unit_name: string;
+  deleted_at: string | null;
+};
+
+export type ProgramListResponse = {
+  items: ProgramPublic[];
+  total: number;
+  page: number;
+  page_size: number;
+};
+
+export type AcademicYearPublic = {
+  id: string;
+  label: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  is_current: boolean;
+};
+
+export type AcademicYearListResponse = {
+  items: AcademicYearPublic[];
+  total: number;
+  page: number;
+  page_size: number;
+};

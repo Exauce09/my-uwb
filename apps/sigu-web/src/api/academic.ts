@@ -1,13 +1,104 @@
 import { apiRequest } from "../lib/api";
 import type {
   AcademicCatalog,
+  AcademicUnitRef,
+  AcademicYearListResponse,
+  AcademicYearPublic,
   EnrollmentAdminPublic,
+  ProgramListResponse,
+  ProgramPublic,
   StudentProfileListResponse,
   StudentProfilePublic,
 } from "../lib/types";
 
 export async function fetchAcademicCatalog(): Promise<AcademicCatalog> {
   return apiRequest<AcademicCatalog>("/api/v1/academic/catalog");
+}
+
+export async function listAcademicUnits(): Promise<AcademicUnitRef[]> {
+  return apiRequest<AcademicUnitRef[]>("/api/v1/academic/units");
+}
+
+export async function listPrograms(params: {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}): Promise<ProgramListResponse> {
+  const search = new URLSearchParams();
+  search.set("page", String(params.page ?? 1));
+  search.set("page_size", String(params.pageSize ?? 20));
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  return apiRequest<ProgramListResponse>(`/api/v1/academic/programs?${search}`);
+}
+
+export async function getProgram(id: string): Promise<ProgramPublic> {
+  return apiRequest<ProgramPublic>(`/api/v1/academic/programs/${id}`);
+}
+
+export async function createProgram(body: {
+  academic_unit_id: string;
+  code: string;
+  title: string;
+  cycle?: string | null;
+}): Promise<ProgramPublic> {
+  return apiRequest<ProgramPublic>("/api/v1/academic/programs", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function updateProgram(
+  id: string,
+  body: {
+    academic_unit_id?: string;
+    code?: string;
+    title?: string;
+    cycle?: string | null;
+  },
+): Promise<ProgramPublic> {
+  return apiRequest<ProgramPublic>(`/api/v1/academic/programs/${id}`, {
+    method: "PATCH",
+    body,
+  });
+}
+
+export async function listAcademicYears(params?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<AcademicYearListResponse> {
+  const search = new URLSearchParams();
+  search.set("page", String(params?.page ?? 1));
+  search.set("page_size", String(params?.pageSize ?? 50));
+  return apiRequest<AcademicYearListResponse>(
+    `/api/v1/academic/years?${search}`,
+  );
+}
+
+export async function createAcademicYear(body: {
+  label: string;
+  starts_on?: string | null;
+  ends_on?: string | null;
+  is_current?: boolean;
+}): Promise<AcademicYearPublic> {
+  return apiRequest<AcademicYearPublic>("/api/v1/academic/years", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function updateAcademicYear(
+  id: string,
+  body: {
+    label?: string;
+    starts_on?: string | null;
+    ends_on?: string | null;
+    is_current?: boolean;
+  },
+): Promise<AcademicYearPublic> {
+  return apiRequest<AcademicYearPublic>(`/api/v1/academic/years/${id}`, {
+    method: "PATCH",
+    body,
+  });
 }
 
 export async function listStudentProfiles(params: {
