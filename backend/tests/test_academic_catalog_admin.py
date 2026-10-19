@@ -250,6 +250,71 @@ def test_list_create_update_program_level(client, admin_user):
     )
 
 
+def test_catalog_excludes_soft_deleted_program(
+    client, admin_user, unit, db_session: Session
+):
+    token = _login(client, "admin@example.com", "AdminPass1!")
+    created = client.post(
+        "/api/v1/academic/programs",
+        headers=_auth(token),
+        json={
+            "academic_unit_id": str(unit.id),
+            "code": "ARCH_ME",
+            "title": "À archiver",
+        },
+    )
+    assert created.status_code == 201
+    program_id = created.json()["id"]
+
+    catalog_before = client.get("/api/v1/academic/catalog", headers=_auth(token))
+    assert catalog_before.status_code == 200
+    assert any(p["code"] == "ARCH_ME" for p in catalog_before.json()["programs"])
+
+    archived = client.delete(
+        f"/api/v1/academic/programs/{program_id}",
+        headers=_auth(token),
+    )
+    assert archived.status_code == 200
+
+    catalog_after = client.get("/api/v1/academic/catalog", headers=_auth(token))
+    assert catalog_after.status_code == 200
+    assert all(p["code"] != "ARCH_ME" for p in catalog_after.json()["programs"])
+    assert (
+        client.get(
+            f"/api/v1/academic/programs/{program_id}",
+            headers=_auth(token),
+        ).status_code
+        == 404
+    )
+
+    year = client.post(
+        "/api/v1/academic/years",
+        headers=_auth(token),
+        json={"label": "2028-2029"},
+    ).json()
+    person = Person(last_name="Arch", first_name="Prog", email="archprog@example.com")
+    db_session.add(person)
+    db_session.commit()
+    db_session.refresh(person)
+    profile = client.post(
+        "/api/v1/student-profiles",
+        headers=_auth(token),
+        json={"person_id": str(person.id), "student_number": "ARCH-1"},
+    ).json()
+    denied = client.post(
+        "/api/v1/enrollments",
+        headers=_auth(token),
+        json={
+            "student_profile_id": profile["id"],
+            "program_id": program_id,
+            "academic_year_id": year["id"],
+            "status": "active",
+        },
+    )
+    assert denied.status_code == 404
+    assert "programme" in denied.json()["detail"].lower()
+
+
 def test_soft_delete_enrollment_allows_recreate(
     client, admin_user, unit, db_session: Session
 ):
