@@ -149,12 +149,17 @@ export function StudentDossierPage() {
                   {academic.enrollments.map((row) => (
                     <li key={row.id} className="py-4 first:pt-2">
                       <p className="text-sm font-medium text-[#1F2937]">
+                        {row.program_code ? `${row.program_code} — ` : ''}
                         {row.program_title}
                       </p>
                       <p className="mt-1 text-sm text-[#6B7280]">
                         {row.academic_unit_name} · {row.academic_year_label}
                         {row.program_level_label
-                          ? ` · ${row.program_level_label}`
+                          ? ` · ${
+                              row.program_level_code
+                                ? `${row.program_level_code} `
+                                : ''
+                            }${row.program_level_label}`
                           : ''}
                       </p>
                       <p className="mt-1 text-xs tracking-wide text-[#6B7280] uppercase">
