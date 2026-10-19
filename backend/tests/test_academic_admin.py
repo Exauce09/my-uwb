@@ -260,6 +260,53 @@ def test_rbac_admin_only(client, admin_user, teacher_user, student_user_a, perso
     )
 
 
+def test_patch_profile_and_enrollment(client, admin_user, catalog, person_a):
+    token = _login(client, "admin@example.com", "AdminPass1!")
+    profile = client.post(
+        "/api/v1/student-profiles",
+        headers=_auth(token),
+        json={"person_id": str(person_a.id), "student_number": "PATCH-1"},
+    ).json()
+    patched = client.patch(
+        f"/api/v1/student-profiles/{profile['id']}",
+        headers=_auth(token),
+        json={"student_number": "PATCH-1B", "status": "suspended"},
+    )
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["student_number"] == "PATCH-1B"
+    assert patched.json()["status"] == "suspended"
+    assert "password" not in patched.text.lower()
+    assert "secret" not in patched.text.lower()
+
+    enr = client.post(
+        "/api/v1/enrollments",
+        headers=_auth(token),
+        json={
+            "student_profile_id": profile["id"],
+            "program_id": str(catalog["program"].id),
+            "academic_year_id": str(catalog["year"].id),
+            "status": "active",
+        },
+    ).json()
+    updated = client.patch(
+        f"/api/v1/enrollments/{enr['id']}",
+        headers=_auth(token),
+        json={"status": "withdrawn", "kind": "correction"},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["status"] == "withdrawn"
+    assert updated.json()["kind"] == "correction"
+
+    # Persistance après relecture (équivalent refresh page)
+    again = client.get(
+        f"/api/v1/student-profiles/{profile['id']}",
+        headers=_auth(token),
+    )
+    assert again.status_code == 200
+    assert again.json()["student_number"] == "PATCH-1B"
+    assert again.json()["enrollments"][0]["status"] == "withdrawn"
+
+
 def test_admin_enrollment_visible_on_student_dossier(
     client, admin_user, catalog, person_a, student_user_a
 ):
